@@ -73,7 +73,7 @@ class Window(QMainWindow):
         self._url = ''
         self._active_protocol = 'http'
         self._active_port = self.settings.port
-        self.setWindowTitle('AirEar · Windows Audio → Phone 1.0.2')
+        self.setWindowTitle('AirEar · Windows Audio → Phone 1.0.3')
         self.resize(840, 720)
         self.setMinimumSize(400, 350)
         self.engine.gain = self.settings.gain
@@ -101,7 +101,7 @@ class Window(QMainWindow):
             button.clicked.connect(lambda _=False, name=section: self.scroll.ensureWidgetVisible(self.sections[name]))
             nav.addWidget(button)
         nav.addStretch()
-        nav.addWidget(QLabel('개인 LAN 전용\nv1.0.2'))
+        nav.addWidget(QLabel('개인 LAN 전용\nv1.0.3'))
         outer.addWidget(self.sidebar)
         right = QWidget()
         column = QVBoxLayout(right)
@@ -298,7 +298,7 @@ class Window(QMainWindow):
         self._button(row, '로그 열기', self.open_log)
         self._button(row, '로그 저장', self.save_log)
         self._button(row, '진단 복사', self.copy_diagnostics)
-        self._button(row, '업데이트 확인', self.manual_update)
+        self.update_button = self._button(row, '업데이트 확인', self.manual_update)
         card.addLayout(row)
 
     def run_task(self, operation, callback=None):
@@ -506,7 +506,7 @@ class Window(QMainWindow):
     def copy_diagnostics(self):
         info = self.runtime.snapshot()
         diagnostics = {
-            'version': '1.0.2', 'running': info.get('running'),
+            'version': '1.0.3', 'running': info.get('running'),
             'receiver_count': len(info.get('clients', [])),
             'port': self.settings.port, 'tls': bool(self.settings.tls_cert),
             'gain': self.engine.gain, 'muted': self.engine.muted,

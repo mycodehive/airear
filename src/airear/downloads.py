@@ -31,19 +31,29 @@ def fetch(url: str, hosts: set[str], limit: int = 2_000_000) -> bytes:
         return result
 
 
-def download(url: str, target: Path, hosts: set[str], limit: int):
+def download(url: str, target: Path, hosts: set[str], limit: int, progress=None):
     # Stream large EXE without retaining a second full copy in memory.
     validate_url(url, hosts)
     opener = build_opener(SafeRedirect(hosts))
     total = 0
     try:
         with opener.open(Request(url, headers={"User-Agent": "AirEar/1.0"}), timeout=30) as response:
+            length = response.headers.get('Content-Length')
+            expected = int(length) if length and length.isdigit() else None
+            if expected is not None and expected > limit:
+                raise ValueError("다운로드 크기 제한 초과")
+            if progress:
+                progress(0, expected)
             with target.open("wb") as output:
                 while chunk := response.read(1024 * 1024):
                     total += len(chunk)
                     if total > limit:
                         raise ValueError("다운로드 크기 제한 초과")
                     output.write(chunk)
+                    if progress:
+                        progress(total, expected)
+            if expected is not None and total != expected:
+                raise ValueError("다운로드 파일이 완전하지 않습니다.")
     except BaseException:
         target.unlink(missing_ok=True)
         raise
