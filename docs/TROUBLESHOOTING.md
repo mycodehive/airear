@@ -1,0 +1,20 @@
+# 문제 해결
+
+| 증상 | 확인·조치 |
+|---|---|
+| iPhone에서 접속 안 됨 | 같은 LAN, 정확한 PC IPv4, 개인 방화벽 포트 허용, AP isolation/게스트 Wi-Fi/VPN 여부 확인 |
+| 여러 주소가 보임 | 실제 Wi-Fi/Ethernet 주소를 선택. VPN/가상 어댑터 주소 제외 |
+| PIN 인증 실패 | 표시된 새 PIN 사용. 재생성 시 기존 연결 해제. 시도 제한은 1분 뒤 재시도 |
+| HTTPS 오류 | IP SAN 일치/만료/iPhone CA 신뢰 확인. 단순 경고 우회 대신 인증서 수정 |
+| 연결은 됐지만 무음 | 앱 실제 재생 장치와 선택 loopback 일치, 송출 mute/gain·iPhone 음량 확인. 필요 시 Windows 기본 출력 CABLE Input 지정 |
+| PC에서도 소리가 남 | 물리 스피커 대신 CABLE Input으로 앱/시스템 출력 지정, Windows ‘이 장치로 듣기’ 해제 |
+| 가상 장치 미감지 | 공식 설치 프로그램 완료·재부팅 후 새로고침. 장치 감지가 설치 결과 확인 기준 |
+| VB-CABLE 설치 자동 실행 중단 | 공식 링크/ZIP/서명 검사 실패 시 안전하게 중단. https://vb-audio.com/Cable/ 공식 설치를 직접 진행 |
+| 화면 잠금 후 정지 | iOS 정책 제한. Safari로 돌아와 듣기 시작. 백그라운드 재생 유지 보장 없음 |
+| 200% 음량 효과가 적음 | peak limiter가 이미 큰 신호의 클리핑을 방지. iPhone 물리 볼륨도 확인 |
+| 장치 제거 후 무음 | 캡처 재시도 중에는 무음 프레임 유지. 재연결 후 새로고침/재선택. Windows endpoint가 바뀌면 재선택 |
+| 업데이트 오류 | 정식 Release 유무/GitHub API 제한/인터넷 확인. 현재 실행은 계속 가능. 실패 시 기존 EXE 수동 재실행 |
+| 설정 손상 | 기본값으로 복구됨. AppData settings.json을 백업 후 재설정 |
+| EXE 실행 실패 | Windows x64 확인, 보안제품 격리 기록 확인, `%LOCALAPPDATA%\AirEar\airear.log` 확인 |
+
+지연은 측정 전 숫자로 보장하지 않습니다. 30분 시험은 실제 Windows 재생과 iPhone 수신으로 수행하고 장치/iOS/Wi-Fi/RSSI/수신기 수/평균·최대 지연/끊김 횟수를 기록하세요. 소스와 수신 출력을 동시에 녹음해 파형 시간 차이를 비교하면 지연을 측정할 수 있습니다.
