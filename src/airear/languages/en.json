@@ -206,6 +206,8 @@
     "sessions_full": "Authentication sessions are full. Try again later.",
     "receivers_full": "The maximum of four receivers is already connected.",
     "bad_sdp": "Invalid audio negotiation request.",
-    "negotiation_failed": "Audio connection negotiation failed."
+    "negotiation_failed": "Audio connection negotiation failed.",
+    "quality_stats": "Network jitter {jitter} ms · lost packets {lost} · concealed samples {concealed}",
+    "quality_unavailable": "Waiting for audio network statistics"
   }
 }

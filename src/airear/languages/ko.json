@@ -206,6 +206,8 @@
     "sessions_full": "인증 세션이 가득 찼습니다. 잠시 후 다시 시도하세요.",
     "receivers_full": "최대 수신기 4대가 연결되어 있습니다.",
     "bad_sdp": "잘못된 SDP 요청입니다.",
-    "negotiation_failed": "오디오 연결 협상에 실패했습니다."
+    "negotiation_failed": "오디오 연결 협상에 실패했습니다.",
+    "quality_stats": "네트워크 지터 {jitter} ms · 손실 패킷 {lost} · 보정 샘플 {concealed}",
+    "quality_unavailable": "오디오 네트워크 통계를 기다리는 중입니다."
   }
 }

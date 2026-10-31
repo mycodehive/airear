@@ -511,6 +511,7 @@ class Window(QMainWindow):
             'port': self.settings.port, 'tls': bool(self.settings.tls_cert),
             'gain': self.engine.gain, 'muted': self.engine.muted,
             'device_id': self.settings.device_id, 'audio_level': self.engine.level,
+            'audio_buffer': self.engine.metrics() if hasattr(self.engine, 'metrics') else {},
         }
         QApplication.clipboard().setText(json.dumps(diagnostics, ensure_ascii=False, indent=2))
 

@@ -36,6 +36,27 @@ setInterval(loadLanguage,2000);
 
 let pc = null, token = null, peerId = null, context = null, gain = null, source = null;
 let wanted = false, retry = null, connectTimer = null, attempts = 0, generation = 0;
+let statsTimer = null, statsBusy = false;
+const quality = document.createElement('p');
+quality.id = 'quality'; quality.setAttribute('role','status');
+document.querySelector('.tips').appendChild(quality);
+async function sampleQuality(connection) {
+  if (statsBusy || pc !== connection) return;
+  statsBusy = true;
+  try {
+    const reports = await connection.getStats();
+    if (pc !== connection) return;
+    reports.forEach(report => {
+      if(report.type === 'inbound-rtp' && (report.kind === 'audio' || report.mediaType === 'audio')) {
+        quality.textContent = t('quality_stats', {
+          jitter: Number.isFinite(report.jitter) ? Math.round(report.jitter * 1000) : '—',
+          lost: report.packetsLost ?? '—', concealed: report.concealedSamples ?? '—'
+        });
+      }
+    });
+  } catch { /* Statistics are optional; playback must continue. */ }
+  finally { statsBusy = false; }
+}
 let statusKey='waiting', statusArgs={};
 const status = (key, args={}) => {
   statusArgs=args;
@@ -51,6 +72,7 @@ function teardown() {
   ++generation; // Invalidate pending authentication, offers and playback promises.
   clearTimeout(retry); retry = null;
   clearTimeout(connectTimer); connectTimer = null;
+  clearInterval(statsTimer); statsTimer = null; quality.textContent = '';
   if (pc) { pc.onconnectionstatechange = null; pc.close(); pc = null; }
   if (source) { source.disconnect(); source = null; }
   if (gain) { gain.disconnect(); gain = null; }
@@ -92,6 +114,11 @@ async function connect(gesture) {
     connection.addTransceiver('audio',{direction:'recvonly'});
     connection.ontrack = async event => {
       if (pc !== connection || current !== generation) return;
+      // Advisory target, in milliseconds. Unsupported browsers retain adaptive defaults.
+      try { if ('jitterBufferTarget' in event.receiver) event.receiver.jitterBufferTarget = 100; } catch { /* Browser-managed buffering remains active. */ }
+      clearInterval(statsTimer);
+      statsTimer = setInterval(()=>sampleQuality(connection), 2000);
+      quality.textContent = t('quality_unavailable');
       const stream = new MediaStream([event.track]);
       $('audio').srcObject = stream;
       // Web Audio gain is used because iOS ignores HTMLMediaElement.volume.
