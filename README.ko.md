@@ -80,6 +80,6 @@ uv run --locked --extra dev python -m airear
 ./scripts/build.ps1
 ```
 
-의존성과 해시는 `uv.lock`에 고정돼 있습니다. EXE에는 Python 런타임이 포함되며 VB-CABLE 드라이버는 별도로 설치합니다. 태그 워크플로는 실기기 수락 전까지 시험판을 게시하고, 자동 업데이트는 GitHub 정식 릴리스를 사용합니다.
+의존성과 해시는 `uv.lock`에 고정돼 있습니다. EXE에는 Python 런타임이 포함되며 VB-CABLE 드라이버는 별도로 설치합니다. 버전 릴리스 커밋과 태그는 Windows CI에서 게시하며 사전 배포 접미사가 있는 버전은 시험판으로 게시하고, 자동 업데이트는 GitHub 정식 릴리스를 사용합니다.
 
 [상세 설치 안내](docs/INSTALL.md) · [문제 해결](docs/TROUBLESHOOTING.md) · [릴리스 절차](docs/RELEASING.md)

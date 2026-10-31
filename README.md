@@ -80,6 +80,6 @@ uv run --locked --extra dev python -m airear
 ./scripts/build.ps1
 ```
 
-The locked dependencies include the Python desktop UI, audio engine, web server, receiver assets, and build tools. The EXE bundles the Python runtime; VB-CABLE remains a separately installed driver. Tag workflows publish prereleases until physical-device acceptance is recorded. Automatic updates use stable GitHub Releases.
+The locked dependencies include the Python desktop UI, audio engine, web server, receiver assets, and build tools. The EXE bundles the Python runtime; VB-CABLE remains a separately installed driver. Versioned release commits and tags publish through Windows CI; versions with a prerelease suffix remain prereleases. Automatic updates use stable GitHub Releases.
 
 [Installation details](docs/INSTALL.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Release process](docs/RELEASING.md)
