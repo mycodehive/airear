@@ -30,11 +30,11 @@ def latest_release():
     if version_tuple(release["tag_name"]) <= version_tuple(__version__):
         return None
     assets = {a["name"]: a["browser_download_url"] for a in release["assets"]}
-    if not {"WindowsAudio_iPhone.exe", "SHA256SUMS.txt"} <= assets.keys():
+    if not {"AirEar.exe", "SHA256SUMS.txt"} <= assets.keys():
         raise ValueError("릴리스에 EXE 또는 검증 파일이 없습니다.")
     # Assets must belong to this exact repository; redirected CDN permitted by downloader.
     prefix = "https://github.com/mycodehive/airear/releases/download/" + release["tag_name"] + "/"
-    for name in ("WindowsAudio_iPhone.exe", "SHA256SUMS.txt"):
+    for name in ("AirEar.exe", "SHA256SUMS.txt"):
         if not assets[name].startswith(prefix):
             raise ValueError("릴리스 파일 주소가 일치하지 않습니다.")
     return {"tag": release["tag_name"], "assets": assets}
@@ -43,12 +43,12 @@ def latest_release():
 def stage_update(release):
     import tempfile
     directory = Path(tempfile.mkdtemp(prefix="update-", dir=data_dir()))
-    exe = directory / "WindowsAudio_iPhone.exe"
+    exe = directory / "AirEar.exe"
     checksums = fetch(release["assets"]["SHA256SUMS.txt"], HOSTS, 8192).decode("utf-8")
-    match = re.search(r"^([a-fA-F0-9]{64})\s+\*?WindowsAudio_iPhone\.exe\s*$", checksums, re.M)
+    match = re.search(r"^([a-fA-F0-9]{64})\s+\*?AirEar\.exe\s*$", checksums, re.M)
     if not match:
         raise ValueError("체크섬 파일 형식이 올바르지 않습니다.")
-    download(release["assets"]["WindowsAudio_iPhone.exe"], exe, HOSTS, 600_000_000)
+    download(release["assets"]["AirEar.exe"], exe, HOSTS, 600_000_000)
     with exe.open("rb") as stream:
         digest = hashlib.file_digest(stream, "sha256").hexdigest()
         stream.seek(0)

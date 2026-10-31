@@ -24,9 +24,9 @@ jobs:
         run: ./scripts/build.ps1
       - uses: actions/upload-artifact@v4
         with:
-          name: WindowsAudio_iPhone-x64
+          name: AirEar-x64
           path: |
-            dist/WindowsAudio_iPhone.exe
+            dist/AirEar.exe
             dist/SHA256SUMS.txt
           if-no-files-found: error
       - name: Upload hardware acceptance checklist
@@ -44,11 +44,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: WindowsAudio_iPhone-x64
+          name: AirEar-x64
           path: dist
       - name: Publish test release; hardware validation remains explicit
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/WindowsAudio_iPhone.exe dist/SHA256SUMS.txt \
+          gh release create "$GITHUB_REF_NAME" dist/AirEar.exe dist/SHA256SUMS.txt \
             --title "AirEar $GITHUB_REF_NAME" --notes-file docs/RELEASE_NOTES.md --prerelease

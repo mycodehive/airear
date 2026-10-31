@@ -1,6 +1,6 @@
 # 검증 현황
 
-기록일: 2026-10-31. 구현 버전: 1.0.0 후보. 환경: Linux x64 / Python3.12.14 / Qt offscreen. 실제 Windows와 iPhone은 사용할 수 없었습니다.
+기록일: 2026-10-31. 구현 버전: 1.0.0 후보. 환경: Linux x64 / Python3.12.14 / Qt offscreen. 실제 Windows와 휴대폰은 사용할 수 없었습니다.
 
 ## 실행 완료
 
@@ -34,8 +34,8 @@
 - [ ] 실제 WASAPI 스피커 loopback 캡처
 - [ ] 실제 VB-CABLE capture와 물리 스피커 무음 분리
 - [ ] 실제 기본 장치 변경·unplug/replug·고샘플레이트·무음 유지
-- [ ] iPhone Safari PIN/QR/명시적 재생/독립 음량
-- [ ] 여러 iPhone 및 AirPods
+- [ ] 휴대폰 Safari PIN/QR/명시적 재생/독립 음량
+- [ ] 여러 휴대폰 및 AirPods
 - [ ] Safari Wi-Fi 끊김·재연결·iOS 잠금 후 재생 재개 안내
 - [ ] HTTPS IP SAN/내부CA 신뢰 및 TLS 접속
 - [ ] VB-CABLE 실제 동의/UAC 취소/설치 실패/성공 감지·재부팅
@@ -45,7 +45,7 @@
 
 측정표(미측정):
 
-| Windows/출력장치 | iPhone/iOS | Wi-Fi | 수신기 수 | 재생시간 | 평균/최대지연 | 끊김 | CPU/RAM |
+| Windows/출력장치 | 휴대폰/iOS | Wi-Fi | 수신기 수 | 재생시간 | 평균/최대지연 | 끊김 | CPU/RAM |
 |---|---|---|---|---|---|---|---|
 | 미측정 | 미측정 | 미측정 | 미측정 | 미측정 | 미측정 | 미측정 | 미측정 |
 

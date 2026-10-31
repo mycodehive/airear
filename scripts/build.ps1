@@ -10,9 +10,9 @@ if ($LASTEXITCODE) { throw 'Lint failed' }
 uv run --locked --extra dev pytest -q
 if ($LASTEXITCODE) { throw 'Tests failed' }
 uv run --locked --extra dev python scripts/build_assets.py
-uv run --locked --extra dev pyinstaller --noconfirm --clean WindowsAudio_iPhone.spec
+uv run --locked --extra dev pyinstaller --noconfirm --clean AirEar.spec
 if ($LASTEXITCODE) { throw 'Build failed' }
-$exe = Join-Path $PWD 'dist/WindowsAudio_iPhone.exe'
+$exe = Join-Path $PWD 'dist/AirEar.exe'
 $bytes = [System.IO.File]::ReadAllBytes($exe)
 if ($bytes[0] -ne 77 -or $bytes[1] -ne 90) { throw 'Invalid DOS header' }
 $peOffset = [BitConverter]::ToInt32($bytes, 0x3c)
@@ -24,4 +24,4 @@ $process = Start-Process -FilePath $exe -ArgumentList '--smoke-test' -PassThru
 if (-not $process.WaitForExit(60000)) { $process.Kill(); throw 'EXE smoke test timed out' }
 if ($process.ExitCode -ne 0) { throw 'EXE smoke test failed' }
 $hash = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLower()
-[System.IO.File]::WriteAllText((Join-Path $PWD 'dist/SHA256SUMS.txt'), "$hash  WindowsAudio_iPhone.exe`n")
+[System.IO.File]::WriteAllText((Join-Path $PWD 'dist/SHA256SUMS.txt'), "$hash  AirEar.exe`n")

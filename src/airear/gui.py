@@ -408,7 +408,7 @@ class Window(QMainWindow):
             selected_id = selected.data(Qt.ItemDataRole.UserRole) if selected else None
             self.clients.clear()
             for client in clients:
-                item = QListWidgetItem(f'{client.get("address", "iPhone")}  ·  {client.get("state", "연결됨")}')
+                item = QListWidgetItem(f'{client.get("address", "휴대폰")}  ·  {client.get("state", "연결됨")}')
                 item.setData(Qt.ItemDataRole.UserRole, client['id'])
                 self.clients.addItem(item)
                 if client['id'] == selected_id:

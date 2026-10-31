@@ -14,18 +14,18 @@ AirEar는 윈도우 PC에서 재생되는 소리를 가까운 휴대폰의 웹�
 
 윈도우 오디오 → WASAPI 루프백 → 로컬 WebRTC 연결 → 휴대폰 브라우저 → 휴대폰 스피커 또는 연결된 이어폰.
 
-특정 휴대폰 브랜드에 한정하지 않고 WebRTC와 Web Audio를 지원하는 브라우저를 수신기로 사용합니다. iPhone의 Safari, Android의 Chrome 등 최신 브라우저로 사용할 수 있도록 설계했으며, 실제 기종·브라우저별 동작은 실기기 확인이 필요합니다. 다른 휴대폰 앱의 소리나 전화와 자동으로 섞이거나 자연스럽게 전환되는 동작까지 보장하지는 않습니다.
+특정 휴대폰 브랜드에 한정하지 않고 WebRTC와 Web Audio를 지원하는 브라우저를 수신기로 사용합니다. Safari, Chrome 등 최신 브라우저로 사용할 수 있도록 설계했으며, 실제 기종·브라우저별 동작은 실기기 확인이 필요합니다. 다른 휴대폰 앱의 소리나 전화와 자동으로 섞이거나 자연스럽게 전환되는 동작까지 보장하지는 않습니다.
 
 ## 윈도우 설치
 
 준비물은 Windows 10/11 x64 PC와 같은 신뢰할 수 있는 로컬 네트워크에 연결된 휴대폰입니다.
 
-1. 릴리스가 게시되면 [GitHub Releases](https://github.com/mycodehive/airear/releases)에서 `WindowsAudio_iPhone.exe`를 내려받습니다. 호환성을 위해 기존 파일명을 유지하며 수신 기기는 iPhone으로 제한되지 않습니다.
-2. 현재 개발 빌드는 성공한 [Windows EXE Actions 실행](https://github.com/mycodehive/airear/actions)을 열고 `WindowsAudio_iPhone-x64` 아티팩트를 내려받아 압축을 풉니다. Actions 다운로드에는 GitHub 로그인이 필요할 수 있습니다.
+1. 릴리스가 게시되면 [GitHub Releases](https://github.com/mycodehive/airear/releases)에서 `AirEar.exe`를 내려받습니다.
+2. 현재 개발 빌드는 성공한 [Windows EXE Actions 실행](https://github.com/mycodehive/airear/actions)을 열고 `AirEar-x64` 아티팩트를 내려받아 압축을 풉니다. Actions 다운로드에는 GitHub 로그인이 필요할 수 있습니다.
 3. 쓰기 가능한 폴더에 EXE를 저장한 뒤 실행합니다. **Python을 따로 설치할 필요가 없습니다.**
 4. PC 스피커를 조용하게 유지하려면 선택 사항인 VB-CABLE 설치 안내에 동의하고 공식 드라이버 설치 화면을 진행합니다. 관리자 승인이나 재부팅이 필요할 수 있습니다. 나중에 설치를 선택하고 일반 출력 장치로 먼저 시험할 수도 있습니다.
 
-빌드에는 SHA256 체크섬이 포함됩니다. PowerShell에서 `Get-FileHash .\WindowsAudio_iPhone.exe -Algorithm SHA256`을 실행해 `SHA256SUMS.txt`와 비교할 수 있습니다. 현재 EXE는 코드 서명이 없어 Windows SmartScreen 경고가 나타날 수 있습니다.
+빌드에는 SHA256 체크섬이 포함됩니다. PowerShell에서 `Get-FileHash .\AirEar.exe -Algorithm SHA256`을 실행해 `SHA256SUMS.txt`와 비교할 수 있습니다. 현재 EXE는 코드 서명이 없어 Windows SmartScreen 경고가 나타날 수 있습니다.
 
 ## 휴대폰 연결
 

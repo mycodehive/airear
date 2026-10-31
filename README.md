@@ -14,18 +14,18 @@ At a café or library, route Windows sound to a virtual audio device to keep the
 
 Windows audio → WASAPI loopback → local WebRTC connection → phone browser → phone speaker or connected earbuds.
 
-AirEar uses a local network connection. It supports browser-based receivers rather than a particular phone brand: try a current browser with WebRTC and Web Audio support, such as Safari on iPhone or Chrome on Android. Actual device and browser compatibility still needs physical-device testing. AirEar does not guarantee that other phone apps, calls, and browser audio will mix or switch seamlessly.
+AirEar uses a local network connection. It supports browser-based receivers rather than a particular phone brand: try a current browser with WebRTC and Web Audio support, such as Safari or Chrome. Actual device and browser compatibility still needs physical-device testing. AirEar does not guarantee that other phone apps, calls, and browser audio will mix or switch seamlessly.
 
 ## Install on Windows
 
 Requirements: Windows 10/11 x64 and a phone on the same trusted local network.
 
-1. Open [GitHub Releases](https://github.com/mycodehive/airear/releases) and download `WindowsAudio_iPhone.exe` when a release is available. The existing filename is retained for compatibility; the receiver is not limited to iPhone.
-2. For the current development build, open a successful [Windows EXE Actions run](https://github.com/mycodehive/airear/actions), download the `WindowsAudio_iPhone-x64` artifact, and extract it. A GitHub sign-in may be required to download Actions artifacts.
+1. Open [GitHub Releases](https://github.com/mycodehive/airear/releases) and download `AirEar.exe` when a release is available.
+2. For the current development build, open a successful [Windows EXE Actions run](https://github.com/mycodehive/airear/actions), download the `AirEar-x64` artifact, and extract it. A GitHub sign-in may be required to download Actions artifacts.
 3. Keep the EXE in a folder you can write to, then run it. **You do not need to install Python.**
 4. If you want the PC's speakers to stay quiet, accept the optional VB-CABLE installation prompt and complete the official driver's installer. Administrator approval and a restart may be required. You can choose to install it later and test with a regular output device.
 
-The build includes a SHA256 checksum. In PowerShell, use `Get-FileHash .\WindowsAudio_iPhone.exe -Algorithm SHA256` and compare the result with `SHA256SUMS.txt`. The app is currently unsigned, so Windows SmartScreen may show a warning.
+The build includes a SHA256 checksum. In PowerShell, use `Get-FileHash .\AirEar.exe -Algorithm SHA256` and compare the result with `SHA256SUMS.txt`. The app is currently unsigned, so Windows SmartScreen may show a warning.
 
 ## Connect your phone
 

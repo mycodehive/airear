@@ -71,7 +71,7 @@ def install_vbcable(parent=None):
     from PySide6.QtWidgets import QMessageBox
     dialog = QMessageBox(parent)
     dialog.setWindowTitle("VB-CABLE 설치 안내")
-    dialog.setText("PC 스피커에서 소리를 출력하지 않고 iPhone으로만 전송하려면 VB-CABLE 가상 오디오 드라이버가 필요합니다.\n\n"
+    dialog.setText("PC 스피커에서 소리를 출력하지 않고 휴대폰으로만 전송하려면 VB-CABLE 가상 오디오 드라이버가 필요합니다.\n\n"
                    "VB-CABLE은 외부 개발사인 VB-Audio에서 제공하는 가상 오디오 장치입니다.\n"
                    "설치 시 관리자 권한이 필요할 수 있으며, 설치 후 재부팅해야 할 수 있습니다.\n\n지금 설치하시겠습니까?")
     install = dialog.addButton("설치하기", QMessageBox.ButtonRole.AcceptRole)

@@ -58,7 +58,7 @@ def test_settings_roundtrip_and_corruption(tmp_path, monkeypatch):
 def test_release_selection_requires_assets_and_new_version(monkeypatch):
     release = {'tag_name': 'v1.0.1', 'assets': [
         {'name': name, 'browser_download_url': f'https://github.com/mycodehive/airear/releases/download/v1.0.1/{name}'}
-        for name in ['WindowsAudio_iPhone.exe', 'SHA256SUMS.txt']]}
+        for name in ['AirEar.exe', 'SHA256SUMS.txt']]}
     monkeypatch.setattr(updater, 'fetch', lambda *a: json.dumps(release).encode())
     assert updater.latest_release()['tag'] == 'v1.0.1'
     release['prerelease'] = True
@@ -71,10 +71,10 @@ def test_release_selection_requires_assets_and_new_version(monkeypatch):
 
 def test_update_rejects_checksum_mismatch_and_removes_exe(tmp_path, monkeypatch):
     monkeypatch.setattr(updater, 'data_dir', lambda: tmp_path)
-    monkeypatch.setattr(updater, 'fetch', lambda *a: b'0' * 64 + b'  WindowsAudio_iPhone.exe\n')
+    monkeypatch.setattr(updater, 'fetch', lambda *a: b'0' * 64 + b'  AirEar.exe\n')
     monkeypatch.setattr(updater, 'download', lambda url, path, *args: path.write_bytes(b'MZdummy'))
     with pytest.raises(ValueError, match='무결성'):
-        updater.stage_update({'assets': {'SHA256SUMS.txt': 'https://github.com/checks', 'WindowsAudio_iPhone.exe': 'https://github.com/app'}})
+        updater.stage_update({'assets': {'SHA256SUMS.txt': 'https://github.com/checks', 'AirEar.exe': 'https://github.com/app'}})
     assert not list(tmp_path.rglob('*.exe'))
 
 
