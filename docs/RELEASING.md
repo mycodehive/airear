@@ -1,6 +1,6 @@
 # GitHub 반영과 릴리스
 
-이 세션에서는 GitHub 플러그인 `Unknown tool` 오류와 Git push 인증 부재로 원격 반영을 완료하지 못했습니다. 로컬 구현/테스트 결과는 VALIDATION.md 참조.
+GitHub 연결이 복구되어 PR #1에 소스를 반영했습니다. 초기 Windows 빌드는 성공했고 EXE·체크섬을 Actions artifacts에서 받을 수 있습니다. 실제 오디오·휴대폰 수락 상태는 VALIDATION.md를 확인하세요.
 
 1. GitHub 쓰기 권한이 있는 인증 환경에서 저장소를 열고 제공된 Git bundle 브랜치를 가져오거나 소스를 적용합니다.
 2. `feat/airear-windows-webrtc`를 push하고 main 대상 PR을 엽니다. 단계별 커밋 이력은 DEVELOPMENT.md 참조.

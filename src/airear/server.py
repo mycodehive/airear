@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import ipaddress
 import logging
+import re
 import secrets
 import ssl
 import threading
@@ -16,10 +17,34 @@ from aiohttp import web
 from aiortc import RTCPeerConnection, RTCConfiguration, RTCSessionDescription, RTCRtpSender
 from aiortc.contrib.media import MediaRelay
 
+from .i18n import load_language, available_languages
+
 log = logging.getLogger(__name__)
 WEB = Path(__file__).parent / 'web'
 STATE = web.AppKey('state', object)
 LAN = tuple(ipaddress.ip_network(n) for n in ('10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '127.0.0.0/8', '169.254.0.0/16', '::1/128', 'fc00::/7', 'fe80::/10'))
+
+
+def receiver_text(request, key):
+    code = request.headers.get('X-AirEar-Language', 'en')
+    if not re.fullmatch(r'[A-Za-z][A-Za-z0-9_-]{0,31}', code):
+        code = 'en'
+    pack = load_language(code)
+    fallback = load_language('en')
+    return pack.get('web', {}).get(key, fallback.get('web', {}).get(key, key))
+
+
+async def language_list(request):
+    return web.json_response(available_languages())
+
+
+async def language_file(request):
+    code = request.match_info['code']
+    if not re.fullmatch(r'[A-Za-z][A-Za-z0-9_-]{0,31}', code):
+        raise web.HTTPNotFound()
+    if code not in {item['code'] for item in available_languages()}:
+        raise web.HTTPNotFound()
+    return web.json_response(load_language(code))
 
 
 def is_lan(value):
@@ -65,7 +90,7 @@ class Service:
         value = self.tokens.get(token)
         if not value or value[1] != request.remote:
             log.warning('Receiver authentication denied: address=%s reason=expired-or-unrecognized-session', request.remote)
-            raise web.HTTPUnauthorized(text='인증이 만료되었습니다. PIN을 다시 입력하세요.')
+            raise web.HTTPUnauthorized(text=receiver_text(request, 'auth_expired'))
         return token
 
     async def remove(self, identity):
@@ -103,20 +128,20 @@ class Service:
 @web.middleware
 async def guard(request, handler):
     if not is_lan(request.remote or ''):
-        raise web.HTTPForbidden(text='개인 LAN에서만 연결할 수 있습니다.')
+        raise web.HTTPForbidden(text=receiver_text(request, 'lan_only'))
     host = urlsplit('//' + request.host).hostname
     if host != 'localhost' and not is_lan(host or ''):
-        raise web.HTTPForbidden(text='LAN IP 주소로 접속하세요.')
+        raise web.HTTPForbidden(text=receiver_text(request, 'lan_host'))
     if request.method != 'GET':
         origin = request.headers.get('Origin')
         if origin != f'{request.scheme}://{request.host}':
-            raise web.HTTPForbidden(text='다른 출처의 요청은 허용하지 않습니다.')
+            raise web.HTTPForbidden(text=receiver_text(request, 'origin'))
     try:
         response = await handler(request)
     except web.HTTPException as exc:
         response = web.Response(status=exc.status, body=exc.body, headers=exc.headers)
     except (ValueError, TypeError):
-        response = web.Response(status=400, text='요청 형식이 올바르지 않습니다.')
+        response = web.Response(status=400, text=receiver_text(request, 'bad_request'))
     response.headers.update({'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"})
     return response
 
@@ -125,15 +150,15 @@ async def auth(request):
     state = request.app[STATE]
     if state.limited(request.remote):
         log.warning('Receiver authentication denied: address=%s reason=rate-limit', request.remote)
-        raise web.HTTPTooManyRequests(text='시도가 너무 많습니다. 1분 후 다시 시도하세요.')
+        raise web.HTTPTooManyRequests(text=receiver_text(request, 'rate_limit'))
     data = await request.json()
     if not isinstance(data, dict) or not isinstance(data.get('pin'), str) or not secrets.compare_digest(data['pin'], state.pin):
         log.warning('Receiver authentication denied: address=%s reason=incorrect-pin', request.remote)
-        raise web.HTTPUnauthorized(text='PIN이 올바르지 않습니다.')
+        raise web.HTTPUnauthorized(text=receiver_text(request, 'wrong_pin'))
     now = time.monotonic()
     state.tokens = {k: v for k, v in state.tokens.items() if v[0] > now}
     if len(state.tokens) >= 64:
-        raise web.HTTPServiceUnavailable(text='인증 세션이 가득 찼습니다. 잠시 후 다시 시도하세요.')
+        raise web.HTTPServiceUnavailable(text=receiver_text(request, 'sessions_full'))
     token = secrets.token_urlsafe(32)
     state.tokens[token] = (time.monotonic() + 12 * 3600, request.remote)
     log.info('Receiver authenticated: address=%s', request.remote)
@@ -144,10 +169,10 @@ async def offer(request):
     state = request.app[STATE]
     token = state.authenticated(request)
     if len(state.peers) >= 4:
-        raise web.HTTPServiceUnavailable(text='최대 수신기 4대가 연결되어 있습니다.')
+        raise web.HTTPServiceUnavailable(text=receiver_text(request, 'receivers_full'))
     data = await request.json()
     if not isinstance(data, dict) or data.get('type') != 'offer' or not isinstance(data.get('sdp'), str):
-        raise web.HTTPBadRequest(text='잘못된 SDP 요청입니다.')
+        raise web.HTTPBadRequest(text=receiver_text(request, 'bad_sdp'))
     pc = RTCPeerConnection(RTCConfiguration(iceServers=[]))
     identity = secrets.token_hex(12)
     track = state.relay.subscribe(state.engine.track(), buffered=False)
@@ -177,7 +202,7 @@ async def offer(request):
     except Exception as exc:
         log.warning('Receiver negotiation failed: address=%s error=%s', request.remote, type(exc).__name__)
         await state.remove(identity)
-        raise web.HTTPBadRequest(text='오디오 연결 협상에 실패했습니다.') from None
+        raise web.HTTPBadRequest(text=receiver_text(request, 'negotiation_failed')) from None
 
 
 async def disconnect(request):
@@ -195,6 +220,8 @@ def create_app(engine, pin=None):
     state = Service(engine, pin)
     app[STATE] = state
     app.cleanup_ctx.append(state.reap)
+    app.router.add_get('/languages', language_list)
+    app.router.add_get('/languages/{code}.json', language_file)
     app.router.add_post('/api/auth', auth)
     app.router.add_post('/api/offer', offer)
     app.router.add_delete('/api/peers/{id}', disconnect)

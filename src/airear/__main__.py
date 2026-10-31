@@ -9,6 +9,9 @@ def main():
     from PySide6.QtCore import QLockFile, QTimer
     from PySide6.QtWidgets import QApplication, QMessageBox
     app = QApplication(sys.argv)
+    from .i18n import get_localizer
+    from .settings import Settings
+    get_localizer().set_language(Settings.load().language)
     app.setApplicationName("AirEar")
     app.setOrganizationName("mycodehive")
     from PySide6.QtGui import QIcon

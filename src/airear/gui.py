@@ -23,23 +23,10 @@ from .audio import AudioEngine
 from .paths import log_path
 from .server import Runtime
 from .settings import Settings
+from .i18n import available_languages, get_localizer, tr
 
 LOG = logging.getLogger(__name__)
 
-# New locales extend this mapping; unmapped strings keep the Korean source text.
-_TEXT = {
-    'en': {
-        '서버 관리': 'Server', '오디오 설정': 'Audio', 'iPhone 접속': 'Connect iPhone',
-        '로그 및 진단': 'Logs & diagnostics', '설정': 'Settings',
-        '01  서버 관리': '01  Server', '02  오디오 설정': '02  Audio',
-        '03  iPhone 접속': '03  Connect iPhone', '04  로그 및 진단': '04  Logs & diagnostics',
-        '▶ 송출 시작': '▶ Start streaming', '■ 중지': '■ Stop', '새로고침': 'Refresh',
-        'PIN 재생성': 'New PIN', '주소 복사': 'Copy address',
-        '선택한 수신기 연결 해제': 'Disconnect selected receiver',
-        '로그 열기': 'Open log', '로그 저장': 'Save log',
-        '진단 복사': 'Copy diagnostics', '업데이트 확인': 'Check for updates',
-    },
-}
 
 
 class _Bridge(QObject):
@@ -72,6 +59,8 @@ class Window(QMainWindow):
     def __init__(self, settings=None, engine=None, runtime=None):
         super().__init__()
         self.settings = settings or Settings.load()
+        self.localizer = get_localizer()
+        self.localizer.set_language(self.settings.language)
         self.engine = engine or AudioEngine()
         self.runtime = runtime or Runtime(self.engine)
         self.executor = ThreadPoolExecutor(max_workers=3, thread_name_prefix='airear-ui')
@@ -84,7 +73,7 @@ class Window(QMainWindow):
         self._url = ''
         self._active_protocol = 'http'
         self._active_port = self.settings.port
-        self.setWindowTitle('AirEar · Windows Audio → iPhone 1.0.0')
+        self.setWindowTitle('AirEar · Windows Audio → Phone 1.0.0')
         self.resize(1080, 840)
         self.setMinimumSize(400, 350)
         self.engine.gain = self.settings.gain
@@ -102,13 +91,13 @@ class Window(QMainWindow):
         brand = QLabel('◉  AirEar')
         brand.setObjectName('brand')
         nav.addWidget(brand)
-        subtitle = QLabel('WINDOWS AUDIO → IPHONE')
+        subtitle = QLabel('WINDOWS AUDIO → PHONE')
         subtitle.setWordWrap(True)
         subtitle.setStyleSheet('font-size: 10px; color: #8295b0;')
         nav.addWidget(subtitle)
         nav.addSpacing(30)
-        for title, section in [('서버 관리', 'server'), ('오디오 설정', 'audio'), ('iPhone 접속', 'phone'), ('로그 및 진단', 'logs')]:
-            button = QPushButton(self.text(title))
+        for title, section in [('서버 관리', 'server'), ('오디오 설정', 'audio'), ('휴대폰 연결', 'phone'), ('로그 및 진단', 'logs')]:
+            button = QPushButton(title)
             button.clicked.connect(lambda _=False, name=section: self.scroll.ensureWidgetVisible(self.sections[name]))
             nav.addWidget(button)
         nav.addStretch()
@@ -118,7 +107,7 @@ class Window(QMainWindow):
         column = QVBoxLayout(right)
         column.setContentsMargins(22, 16, 22, 16)
         header = QHBoxLayout()
-        title = QLabel('Windows Audio → iPhone')
+        title = QLabel('Windows Audio → Phone')
         title.setObjectName('heading')
         title.setWordWrap(True)
         header.addWidget(title)
@@ -152,6 +141,10 @@ class Window(QMainWindow):
         self.update_timer.setInterval(4 * 60 * 60 * 1000)
         self.update_timer.timeout.connect(self.automatic_update)
         self.update_timer.start()
+        self.localizer.changed.connect(self.retranslate)
+        self.localizer.apply()
+        from .tray import install_tray
+        install_tray(self)
         self.refresh_devices()
         if self.settings.auto_start:
             QTimer.singleShot(300, self.start_server)
@@ -159,17 +152,31 @@ class Window(QMainWindow):
             QTimer.singleShot(3500, self.automatic_update)
 
     def text(self, source):
-        return _TEXT.get(getattr(self.settings, 'language', 'ko'), {}).get(source, source)
+        if self.localizer.language != self.settings.language:
+            self.localizer.set_language(self.settings.language)
+        return tr(source)
+
+    def retranslate(self):
+        if hasattr(self, "qr"):
+            self._url = ""
+            self.update_url()
+            self.refresh_status()
+            self.pin_label.setText(f'접속 PIN  {self.runtime.pin}')
+
+    def change_language(self, code):
+        self.settings.language = code
+        self.settings.save()
+        self.localizer.set_language(code)
 
     def _card(self, name, title, subtitle):
         frame = QFrame()
         frame.setObjectName('card')
         layout = QVBoxLayout(frame)
         layout.setContentsMargins(20, 18, 20, 20)
-        heading = QLabel(self.text(title))
+        heading = QLabel(title)
         heading.setObjectName('cardTitle')
         layout.addWidget(heading)
-        caption = QLabel(self.text(subtitle))
+        caption = QLabel(subtitle)
         caption.setWordWrap(True)
         caption.setObjectName('muted')
         layout.addWidget(caption)
@@ -178,13 +185,13 @@ class Window(QMainWindow):
         return layout
 
     def _button(self, layout, title, slot):
-        button = QPushButton(self.text(title))
+        button = QPushButton(title)
         button.clicked.connect(slot)
         layout.addWidget(button)
         return button
 
     def _build_server(self):
-        card = self._card('server', '01  서버 관리', 'Windows의 소리를 같은 Wi-Fi에 연결된 iPhone으로 전달합니다.')
+        card = self._card('server', '01  서버 관리', 'Windows의 소리를 같은 Wi-Fi에 연결된 휴대폰으로 전달합니다.')
         row = QHBoxLayout()
         self.start_button = self._button(row, '▶ 송출 시작', self.start_server)
         self.start_button.setObjectName('primary')
@@ -239,7 +246,7 @@ class Window(QMainWindow):
         self._button(card, 'PC 스피커 무음 설정 / VB-CABLE 설치 안내', self.install_driver)
 
     def _build_phone(self):
-        card = self._card('phone', '03  iPhone 접속', 'Safari에서 주소를 열고 PIN을 입력한 후 듣기 시작을 누르세요. QR에는 PIN이 포함되지 않습니다.')
+        card = self._card('phone', '03  휴대폰 연결', '휴대폰 브라우저에서 주소를 열고 PIN을 입력한 후 듣기 시작을 누르세요. QR에는 PIN이 포함되지 않습니다.')
         self.address = QComboBox()
         self.address.setEditable(True)
         self.address.addItems(lan_addresses())
@@ -276,7 +283,7 @@ class Window(QMainWindow):
         self.clients.setMinimumHeight(70)
         card.addWidget(self.clients)
         self._button(card, '선택한 수신기 연결 해제', self.disconnect_client)
-        caption = QLabel('AirPods는 iPhone에 연결하세요. 화면 잠금·Safari 백그라운드에서는 iOS 정책에 따라 재생이 중단될 수 있습니다.')
+        caption = QLabel('이어폰은 휴대폰에 연결하세요. 화면 잠금·브라우저 백그라운드에서는 기기 정책에 따라 재생이 중단될 수 있습니다.')
         caption.setWordWrap(True)
         card.addWidget(caption)
 
@@ -388,7 +395,7 @@ class Window(QMainWindow):
         info = self.runtime.snapshot()
         running = info.get('running', False)
         clients = info.get('clients', [])
-        self.state.setText(f'● {"송출 중" if running else "중지됨"} · 수신기 {len(clients)}대')
+        self.state.setText(tr('● {state} · 수신기 {count}대', state=tr('송출 중' if running else '중지됨'), count=len(clients)))
         if not self.busy:
             self.start_button.setEnabled(not running)
             self.stop_button.setEnabled(running)
@@ -431,7 +438,7 @@ class Window(QMainWindow):
             valid = False
         if not valid:
             self._url = ''
-            self.url_label.setText('iPhone에서 접속할 PC의 LAN IPv4 주소를 선택하세요.')
+            self.url_label.setText('휴대폰에서 접속할 PC의 LAN IPv4 주소를 선택하세요.')
             self.network_hint.setText('유효한 사설 LAN 주소가 없습니다. Wi-Fi 연결을 확인하거나 LAN 주소를 직접 입력하세요.')
             self.qr.clear()
             self.qr.setText('LAN 주소를 확인하세요.')
@@ -447,7 +454,7 @@ class Window(QMainWindow):
         url = f'{protocol}://{host}:{self._active_port}/'
         self.url_label.setText(url)
         self.network_hint.setText('같은 Wi-Fi에서 사용하세요. 방화벽은 개인 네트워크만 허용하세요. ' +
-            ('iPhone에서 신뢰하는 인증서가 필요합니다.' if protocol == 'https' else 'HTTP에서는 PIN·인증정보가 LAN에 노출될 수 있습니다. 설정에서 HTTPS를 구성하세요.'))
+            ('휴대폰에서 신뢰하는 인증서가 필요합니다.' if protocol == 'https' else 'HTTP에서는 PIN·인증정보가 LAN에 노출될 수 있습니다. 설정에서 HTTPS를 구성하세요.'))
         if url == self._url:
             return
         self._url = url
@@ -489,7 +496,7 @@ class Window(QMainWindow):
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(log_path())))
 
     def save_log(self):
-        name, _ = QFileDialog.getSaveFileName(self, '로그 저장', 'AirEar.log', '로그 (*.log)')
+        name, _ = QFileDialog.getSaveFileName(self, '로그 저장', 'AirEar.log', '로그 (*.log)', options=QFileDialog.Option.DontUseNativeDialog)
         if name:
             try:
                 Path(name).write_bytes(Path(log_path()).read_bytes())
@@ -512,6 +519,21 @@ class Window(QMainWindow):
         dialog.setWindowTitle('AirEar 설정')
         layout = QVBoxLayout(dialog)
         form = QFormLayout()
+        language = QComboBox()
+        for locale in available_languages():
+            language.addItem(locale["name"], locale["code"])
+        language.setCurrentIndex(max(0, language.findData(self.settings.language)))
+        language.currentIndexChanged.connect(lambda _: self.change_language(language.currentData()))
+        form.addRow("언어", language)
+        language_folder = QPushButton("언어 파일 폴더 열기")
+        def open_languages():
+            from .paths import data_dir
+            folder = data_dir() / "languages"
+            folder.mkdir(parents=True, exist_ok=True)
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(folder)))
+        language_folder.clicked.connect(open_languages)
+        form.addRow(language_folder)
+        form.addRow(QLabel("언어 파일은 저장 즉시 반영됩니다."))
         theme = QComboBox()
         for label, value in [('시스템 자동', 'system'), ('밝게', 'light'), ('어둡게', 'dark')]:
             theme.addItem(label, value)
@@ -527,7 +549,7 @@ class Window(QMainWindow):
         form.addRow('HTTPS 개인 키 PEM', key)
         form.addRow(update)
         layout.addLayout(form)
-        hint = QLabel('주소·HTTPS 변경은 서버 재시작 후 적용됩니다.\n개인 키는 PC에 보관하세요. iPhone에서 신뢰하는 인증서가 필요합니다.')
+        hint = QLabel('주소·HTTPS 변경은 서버 재시작 후 적용됩니다.\n개인 키는 PC에 보관하세요. 휴대폰에서 신뢰하는 인증서가 필요합니다.')
         hint.setWordWrap(True)
         layout.addWidget(hint)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)

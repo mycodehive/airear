@@ -161,3 +161,35 @@ async def test_authentication_logs_never_include_secrets(client, caplog):
     assert 'Receiver authentication denied' in caplog.text
     for secret in ('12345678', 'wrong-secret-pin', token):
         assert secret not in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_receiver_language_override_is_live_and_errors_localized(client, tmp_path, monkeypatch):
+    import json
+    import airear.i18n as i18n
+    monkeypatch.setattr(i18n, 'data_dir', lambda: tmp_path)
+    folder = tmp_path / 'languages'
+    folder.mkdir()
+    pack = folder / 'xx.json'
+    pack.write_text(json.dumps({'name': 'Custom', 'web': {'wrong_pin': 'First custom error'}}))
+    listing = await (await client.get('/languages')).json()
+    assert {'code': 'xx', 'name': 'Custom'} in listing
+    response = await client.get('/languages/xx.json')
+    assert response.status == 200
+    assert response.headers['Cache-Control'] == 'no-store'
+    assert (await response.json())['web']['wrong_pin'] == 'First custom error'
+    pack.write_text(json.dumps({'name': 'Custom', 'web': {'wrong_pin': 'Edited immediately'}}))
+    response = await client.post('/api/auth', json={'pin': 'wrong'},
+                                 headers={**origin(client), 'X-AirEar-Language': 'xx'})
+    assert response.status == 401
+    assert await response.text() == 'Edited immediately'
+    assert (await client.get('/languages/missing.json')).status == 404
+
+
+@pytest.mark.asyncio
+async def test_builtin_receiver_languages(client):
+    en = await (await client.get('/languages/en.json')).json()
+    ko = await (await client.get('/languages/ko.json')).json()
+    assert en['web']['connect'] == 'Connect and listen'
+    assert ko['web']['connect'] == '연결하고 듣기 시작'
+    assert en['web'].keys() == ko['web'].keys()

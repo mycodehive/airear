@@ -1,83 +1,85 @@
-# AirEar · Windows Audio → iPhone
+<p align="center"><img src="src/airear/assets/airear.png" alt="AirEar icon" width="144"></p>
 
-Windows 10/11 x64 시스템 오디오를 WASAPI Loopback으로 캡처하여 같은 LAN의 iPhone Safari에 Opus/WebRTC로 전달하는 데스크톱 앱입니다. Moaham의 사이드바·카드 구성을 참고한 PySide6 UI를 제공합니다.
+# AirEar
 
-**현재 상태: 1.0.0 구현 후보. Windows EXE 빌드와 Windows/iPhone 실기기 검증은 아직 수행하지 않았습니다.** GitHub 플러그인 연결 오류 및 Git push 인증 부재로 이 작업 세션에서 원격 반영/Actions/Release를 실행하지 못했습니다. 이 문서는 다운로드 가능한 EXE가 이미 존재한다고 주장하지 않습니다. [검증 현황](docs/VALIDATION.md)을 확인하세요.
+**Your PC's sound. Your phone. One pair of earbuds.**
 
-## 주요 기능
+[한국어 README](README.ko.md)
 
-- 기본/선택 WASAPI 출력 장치 캡처, 변경·오류 재시도, surround→stereo downmix
-- 48 kHz stereo 20 ms 프레임, 무음 유지, 한정된 버퍼, 0~200% 송출 gain와 peak limiter
-- 최대 4대 iPhone, 수신기별 로컬 음량, QR, 8자리 PIN, 만료 세션 및 PIN 재생성
-- 시스템/밝게/어둡게 테마, 작은 창 스크롤, 고해상도 QR, AppData 설정·회전 로그
-- 동의 후 공식 페이지에서 VB-CABLE 다운로드, ZIP 안전성 및 Authenticode 발행자 확인, 공식 설치 화면 실행
-- 실행 시 및 4시간마다 GitHub 정식 Release 업데이트 확인, 동의 후 EXE 다운로드·SHA256 검증·종료 후 교체
+AirEar sends the sound playing on your Windows PC to a nearby phone's web browser. Keep your earbuds connected to your phone while you work, study, watch a lecture, or listen to a video on your PC. You do not have to disconnect them from your phone and pair them with your PC every time you switch devices.
 
-## 사용자 실행
+At a café or library, route Windows sound to a virtual audio device to keep the PC's speakers quiet, then listen through the earbuds already connected to your phone. AirEar runs on Windows; the phone opens a browser page, with no companion app to install.
 
-Windows 빌드가 통과하고 Release 자산이 게시된 뒤 [Releases](https://github.com/mycodehive/airear/releases)에서 **WindowsAudio_iPhone.exe** 하나를 받습니다. Python 설치는 필요 없습니다. 드라이버는 EXE에 포함되지 않으며 VB-CABLE은 선택 설치입니다.
+## How it works
 
-1. EXE를 실행하고 오디오 장치를 선택합니다.
-2. 송출 시작. Windows 방화벽을 허용할 경우 **개인 네트워크** 범위만 허용합니다.
-3. iPhone을 같은 Wi-Fi에 연결하고 QR 또는 표시된 LAN 주소를 Safari에서 엽니다.
-4. 데스크톱에 표시된 PIN을 입력하고 **듣기 시작**을 누릅니다.
-5. AirPods를 사용하려면 iPhone에 연결합니다.
+Windows audio → WASAPI loopback → local WebRTC connection → phone browser → phone speaker or connected earbuds.
 
-[설치 안내](docs/INSTALL.md) · [문제 해결](docs/TROUBLESHOOTING.md) · [HTTPS/보안](docs/SECURITY.md)
+AirEar uses a local network connection. It supports browser-based receivers rather than a particular phone brand: try a current browser with WebRTC and Web Audio support, such as Safari on iPhone or Chrome on Android. Actual device and browser compatibility still needs physical-device testing. AirEar does not guarantee that other phone apps, calls, and browser audio will mix or switch seamlessly.
 
-## PC 스피커 무음 송출
+## Install on Windows
 
-Windows 설정 → 시스템 → 소리 → 출력에서 **CABLE Input (VB-Audio Virtual Cable)** 을 선택합니다. AirEar에서는 해당 장치의 loopback을 선택합니다. 물리적 스피커 대신 가상 출력으로 보내므로 PC 마스터 음소거에 의존하지 않습니다. 특정 앱이 자체 출력 장치를 고정했다면 그 앱도 CABLE Input으로 지정해야 합니다. Windows의 ‘이 장치로 듣기’는 끄세요.
+Requirements: Windows 10/11 x64 and a phone on the same trusted local network.
 
-일반 스피커 loopback을 선택하면 PC와 iPhone 양쪽에서 들리는 것이 정상입니다. 송출 gain/음소거는 Windows 시스템 음량을 변경하지 않습니다. 서버는 사용자의 기본 출력 장치를 임의로 바꾸지 않습니다.
+1. Open [GitHub Releases](https://github.com/mycodehive/airear/releases) and download `WindowsAudio_iPhone.exe` when a release is available. The existing filename is retained for compatibility; the receiver is not limited to iPhone.
+2. For the current development build, open a successful [Windows EXE Actions run](https://github.com/mycodehive/airear/actions), download the `WindowsAudio_iPhone-x64` artifact, and extract it. A GitHub sign-in may be required to download Actions artifacts.
+3. Keep the EXE in a folder you can write to, then run it. **You do not need to install Python.**
+4. If you want the PC's speakers to stay quiet, accept the optional VB-CABLE installation prompt and complete the official driver's installer. Administrator approval and a restart may be required. You can choose to install it later and test with a regular output device.
 
-## 개발 및 Windows 빌드
+The build includes a SHA256 checksum. In PowerShell, use `Get-FileHash .\WindowsAudio_iPhone.exe -Algorithm SHA256` and compare the result with `SHA256SUMS.txt`. The app is currently unsigned, so Windows SmartScreen may show a warning.
 
-Python 3.12와 [uv](https://docs.astral.sh/uv/)가 필요합니다. 개발 환경에서는 uv가 Python 3.12를 준비할 수 있습니다. 일반 사용자 EXE에는 해당 절차가 없습니다.
+## Connect your phone
+
+1. Connect the PC and phone to the same network. A trusted personal hotspot is often more practical than shared café Wi-Fi, which may block connections between devices.
+2. Connect your earbuds or Bluetooth headphones to **your phone**.
+3. Open AirEar and choose the Windows output device to capture. Start the streaming server.
+4. If Windows asks about firewall access, allow it for your trusted private network.
+5. Scan the QR code with your phone or open the displayed address in its browser.
+6. Enter the PIN shown in AirEar, then tap **Start listening**. The tap is required by browser playback policies.
+7. Adjust the PC's transmit level in AirEar and the listening level on the phone independently.
+
+Use the tray icon to bring AirEar back after minimizing it. Streaming continues while the window is in the tray. Use the tray's **Quit** command to stop the server and exit.
+
+### Keep the PC speakers quiet
+
+Install [VB-CABLE](https://vb-audio.com/Cable/) using AirEar's consent-based helper or the publisher's official installer. In **Windows Settings → System → Sound → Output**, choose **CABLE Input (VB-Audio Virtual Cable)**. In AirEar, select that device's loopback capture.
+
+If a player or meeting app uses its own output setting, point that app to CABLE Input too. Leave Windows' **Listen to this device** option off. This routes sound through the virtual device instead of the physical PC speakers; it does not rely on muting the Windows master volume.
+
+Choosing a normal speaker loopback will normally play sound on both the PC and phone.
+
+## Languages
+
+English and Korean are included. Select a language in AirEar's settings to change the interface immediately. Language text is stored in separate JSON files so translations can be maintained without changing Python or JavaScript source.
+
+You can add or override language files in `%LOCALAPPDATA%\AirEar\languages`. Saved changes are reloaded while the program is running. See [the language-file guide](docs/LANGUAGES.md) for the JSON format, placeholders, and how to add another language.
+
+## Features
+
+- Default or selected Windows WASAPI loopback device, automatic recovery, and continuous silent frames.
+- Opus/WebRTC audio, up to four receivers, per-phone listening volume, and bounded audio buffers.
+- QR address, PIN authentication, session expiry, and desktop receiver controls.
+- Independent transmit volume from 0–200%, mute, peak limiting, and an input level meter.
+- Light, dark, and system themes; scrollable layout; tray operation; runtime language files.
+- Optional official VB-CABLE installer helper, AppData settings and logs, and GitHub stable-release update checks.
+
+## Network and playback notes
+
+Use AirEar on a trusted local network. Default HTTP does not encrypt the PIN and signaling credentials; configure HTTPS with a certificate trusted by the phone for regular use. Do not expose the server to the internet or add router port forwarding. [HTTPS and security guide](docs/SECURITY.md).
+
+Phone screen locking, background tabs, battery-saving settings, and browser policies may interrupt playback. Return to the receiver page and tap Start listening if needed. End-to-end latency and long-running playback depend on the actual devices and network; no fixed latency is promised.
+
+## Build and validation
+
+The initial Windows Actions build passed its tests, PyInstaller onefile build, AMD64 PE checks, frozen-EXE smoke test, and checksum generation. This confirms packaging, not physical Windows audio or phone playback. Follow [PR #1](https://github.com/mycodehive/airear/pull/1) and the [validation checklist](docs/VALIDATION.md) for current acceptance status.
+
+For development, install [uv](https://docs.astral.sh/uv/) and run:
 
 ```powershell
-uv sync --locked --extra dev --python 3.12
+uv sync --locked --extra dev --python 3.12.14
 uv run --locked --extra dev python -m airear
 ./scripts/build.ps1
 ```
 
-`uv.lock`은 전이 의존성과 wheel 해시까지 고정합니다. 빌드 스크립트는 Ruff → pytest → PyInstaller onefile → PE 헤더 → 실제 frozen EXE `--smoke-test` → SHA256 순으로 실행합니다. 결과: `dist/WindowsAudio_iPhone.exe`, `dist/SHA256SUMS.txt`.
+The locked dependencies include the Python desktop UI, audio engine, web server, receiver assets, and build tools. The EXE bundles the Python runtime; VB-CABLE remains a separately installed driver. Tag workflows publish prereleases until physical-device acceptance is recorded. Automatic updates use stable GitHub Releases.
 
-Linux에서는 오디오 합성/인증/Qt offscreen 테스트만 가능합니다. Windows 장치를 대신 검증하지 않습니다.
-
-```bash
-uv sync --locked --extra dev
-QT_QPA_PLATFORM=offscreen uv run --locked --extra dev pytest -q
-uv run --locked --extra dev ruff check .
-```
-
-## 구조
-
-| 경로 | 역할 |
-|---|---|
-| `src/airear/gui.py` | Qt UI, worker 조정, QR, 진단 |
-| `src/airear/audio.py` | WASAPI callback/재시도, 리샘플링, 연속 AudioStreamTrack |
-| `src/airear/server.py` | aiohttp 인증·시그널링, aiortc PeerConnection, unbuffered MediaRelay |
-| `src/airear/web/` | Safari 수신 화면, WebAudio gain, 재연결 |
-| `src/airear/installer.py` | 동의 기반 공식 VB-CABLE 도우미 |
-| `src/airear/updater.py` | GitHub 정식 Release 확인/검증/교체 |
-| `WindowsAudio_iPhone.spec` | GUI/서버/정적파일/런타임을 단일 EXE에 포함 |
-| `.github/workflows/windows.yml` | Windows CI와 태그 Release |
-
-캡처는 별도 thread/PortAudio callback, 시그널링은 별도 asyncio thread, GUI 작업은 제한된 worker pool을 사용합니다. 네트워크 관리자 API는 없으며 송출 관리 권한은 로컬 GUI에만 있습니다. 한국어 기본이며 `Window._TEXT`/`Window.text()`로 영어 확장을 시작할 수 있습니다. 전체 영어 UI는 아직 완성되지 않았습니다.
-
-## CI/CD와 릴리스
-
-브랜치/PR/태그에서 Windows 빌드를 실행하고 artifact에 EXE와 체크섬을 보관합니다. `v*` 태그는 빌드 통과 후 Release를 **prerelease**로 게시합니다. 실기기 수락 테스트를 완료하기 전 정식판으로 표시하지 않도록 의도적으로 제한했습니다. [릴리스 절차](docs/RELEASING.md)에 따라 검증 기록을 남긴 뒤 정식판으로 승격합니다. 앱 자동 업데이트는 GitHub의 `releases/latest`를 사용해 **정식판만** 설치합니다.
-
-코드 서명 인증서는 포함되지 않습니다. 자체 EXE는 서명되지 않은 상태로 배포되며 Windows SmartScreen 경고가 발생할 수 있습니다. SHA256은 파일 무결성 확인이며 발행자 인증을 대체하지 않습니다.
-
-## 제한 사항
-
-- 인터넷 공개/포트포워딩/원격 릴레이 용도가 아닙니다. STUN/TURN 외부 서비스를 사용하지 않습니다.
-- 기본 HTTP는 PIN·토큰을 암호화하지 않습니다. 실사용에는 iPhone이 신뢰하는 인증서를 설정한 HTTPS를 권장합니다.
-- iOS 화면 잠금/백그라운드/AirPlay 정책에 따라 재생이 중단될 수 있습니다. 지연시간을 보장하지 않습니다.
-- VB-CABLE 설치 도우미는 서명을 검증하지 못하거나 패키지 구조가 바뀌면 자동 실행을 중단하고 공식 사이트 수동 설치를 안내합니다.
-- Windows driver/UAC/실제 Safari/30분 연속재생/지연 측정은 현재 미검증입니다.
-
-공식 참고: [PyAudioWPatch](https://github.com/s0d3s/PyAudioWPatch), [aiortc](https://aiortc.readthedocs.io/en/latest/), [VB-CABLE](https://vb-audio.com/Cable/), [WebKit autoplay](https://webkit.org/blog/6784/new-video-policies-for-ios/).
+[Installation details](docs/INSTALL.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Release process](docs/RELEASING.md)

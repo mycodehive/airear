@@ -7,6 +7,7 @@ for name in ['aiortc', 'av', 'pyaudiowpatch']:
     datas += d
     binaries += b
     hiddenimports += h
+datas += [(str(root / 'src/airear/languages'), 'airear/languages')]
 datas += [(str(root / 'src/airear/web'), 'airear/web'), (str(root / 'src/airear/assets'), 'airear/assets')]
 a = Analysis([str(root / 'scripts/launcher.py')], pathex=[str(root / 'src')],
              binaries=binaries, datas=datas, hiddenimports=hiddenimports,

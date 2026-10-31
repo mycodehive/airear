@@ -24,10 +24,10 @@
 
 ## 미검증 — 수락 전 필수
 
-- [ ] GitHub push 및 PR 생성
-- [ ] Windows Actions 의존성 설치·정적분석·테스트 통과
-- [ ] PyInstaller Windows onefile 실제 생성
-- [ ] AMD64 PE signature/PE32+ 및 frozen EXE smoke 통과
+- [x] GitHub 반영 및 PR #1 생성
+- [x] 초기 Windows Actions 의존성 설치·정적분석·테스트 통과 (run 41182320517)
+- [x] 초기 PyInstaller Windows onefile 실제 생성
+- [x] 초기 AMD64 PE signature/PE32+ 및 frozen EXE smoke 통과
 - [ ] GitHub Release에서 실제 EXE/체크섬 다운로드
 - [ ] Python 미설치 Windows10/11 x64에서 GUI 실행
 - [ ] Windows DPI100/125/150/200 및 실제 한글 폰트·테마 확인
@@ -56,3 +56,7 @@
 - API 비인증 조회는 rate limit에 걸렸으며 쓰기 인증을 대신하지 않습니다.
 
 따라서 PR, Actions run ID, Release URL, 실제 Windows EXE를 생성했다고 보고하지 않습니다. 연결 복구 후 RELEASING.md의 절차를 실행해야 합니다.
+
+## PR #1 follow-up
+
+English and Korean READMEs, runtime JSON localization, minimize-to-tray, and the supplied artwork are included in this follow-up. Qt offscreen tests cover tray restoration and live JSON switching; Windows tray and mobile hardware acceptance remain pending. Initial Windows build: https://github.com/mycodehive/airear/actions/runs/41182320517 . GitHub connectivity has been restored; the earlier connection failures above are historical.

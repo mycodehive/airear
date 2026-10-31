@@ -19,7 +19,7 @@ airear = "airear.__main__:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 [tool.setuptools.package-data]
-airear = ["web/*", "assets/*"]
+airear = ["web/*", "assets/*", "languages/*.json"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
