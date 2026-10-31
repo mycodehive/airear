@@ -15,11 +15,24 @@ BUILTIN = Path(__file__).parent / 'languages'
 LOG = logging.getLogger(__name__)
 
 
+def ensure_language_files() -> Path:
+    folder = data_dir() / 'languages'
+    folder.mkdir(parents=True, exist_ok=True)
+    for code in ('ko', 'en'):
+        target = folder / f'{code}.json'
+        try:
+            with target.open('x', encoding='utf-8') as output:
+                output.write((BUILTIN / f'{code}.json').read_text(encoding='utf-8'))
+        except FileExistsError:
+            pass  # Preserve translations edited by the user.
+    return folder
+
+
 def load_language(code: str) -> dict:
     if not code or any(c not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-' for c in code):
         code = 'en'
     result = {'name': code, 'strings': {}, 'web': {}}
-    for folder in (BUILTIN, data_dir() / 'languages'):
+    for folder in (BUILTIN, ensure_language_files()):
         try:
             raw = json.loads((folder / f'{code}.json').read_text(encoding='utf-8'))
             if not isinstance(raw, dict):
@@ -37,7 +50,7 @@ def load_language(code: str) -> dict:
 
 def available_languages() -> list[dict]:
     codes = {'ko', 'en'}
-    for folder in (BUILTIN, data_dir() / 'languages'):
+    for folder in (BUILTIN, ensure_language_files()):
         if folder.exists():
             codes.update(p.stem for p in folder.glob('*.json'))
     return [{'code': code, 'name': load_language(code)['name']} for code in sorted(codes)]
