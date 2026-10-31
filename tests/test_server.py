@@ -1,3 +1,4 @@
+import asyncio
 import pytest
 import pytest_asyncio
 from aiohttp.test_utils import TestClient, TestServer
@@ -193,3 +194,56 @@ async def test_builtin_receiver_languages(client):
     assert en['web']['connect'] == 'Connect and listen'
     assert ko['web']['connect'] == '연결하고 듣기 시작'
     assert en['web'].keys() == ko['web'].keys()
+
+
+@pytest.mark.asyncio
+async def test_bounded_relay_preserves_frames_through_short_consumer_stall():
+    from airear.server import BoundedAudioRelay
+    class Source:
+        def __init__(self):
+            self.queue = asyncio.Queue()
+        async def recv(self):
+            return await self.queue.get()
+    source = Source()
+    relay = BoundedAudioRelay()
+    slow = relay.subscribe(source)
+    fast = relay.subscribe(source)
+    relay.start(slow)
+    relay.start(fast)
+    try:
+        for value in range(4):
+            source.queue.put_nowait(value)
+            assert await fast.recv() == value
+        # The stalled peer still receives every frame in order, not only the last.
+        assert [await slow.recv() for _ in range(4)] == list(range(4))
+        assert slow.dropped_frames == 0
+        for value in range(15):
+            source.queue.put_nowait(value)
+        await asyncio.sleep(0)
+        assert slow.queue.qsize() == 10
+        assert slow.dropped_frames == 5
+        assert [await slow.recv() for _ in range(10)] == list(range(5, 15))
+    finally:
+        await relay.close()
+    assert relay.task is None and not relay.proxies
+
+
+@pytest.mark.asyncio
+async def test_bounded_relay_stop_wakes_waiters_and_can_restart():
+    from airear.server import BoundedAudioRelay
+    from aiortc.mediastreams import MediaStreamError
+    class Source:
+        async def recv(self):
+            await asyncio.sleep(3600)
+    relay = BoundedAudioRelay()
+    track = relay.subscribe(Source())
+    pending = asyncio.create_task(track.recv())
+    await asyncio.sleep(0)
+    track.stop()
+    with pytest.raises(MediaStreamError):
+        await pending
+    # New receiver arriving before the cancelled old pump has completed.
+    new_track = relay.subscribe(Source())
+    relay.start(new_track)
+    assert not relay.task.cancelling()
+    await relay.close()

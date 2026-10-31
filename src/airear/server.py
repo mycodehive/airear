@@ -15,7 +15,8 @@ from urllib.parse import urlsplit
 
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCConfiguration, RTCSessionDescription, RTCRtpSender
-from aiortc.contrib.media import MediaRelay
+from aiortc import AudioStreamTrack
+from aiortc.mediastreams import MediaStreamError
 
 from .i18n import load_language, available_languages
 
@@ -57,6 +58,86 @@ def is_lan(value):
         return False
 
 
+class BufferedRelayTrack(AudioStreamTrack):
+    """A receiver may absorb short encoder stalls without skipping source frames."""
+    def __init__(self, relay):
+        super().__init__()
+        self.relay = relay
+        self.queue = asyncio.Queue(maxsize=10)  # 200 ms maximum at 20 ms/frame
+        self.dropped_frames = 0
+
+    async def recv(self):
+        if self.readyState != 'live':
+            raise MediaStreamError
+        self.relay.start(self)
+        frame = await self.queue.get()
+        if frame is None:
+            self.stop()
+            raise MediaStreamError
+        return frame
+
+    def put(self, frame):
+        if self.queue.full():
+            self.queue.get_nowait()
+            self.dropped_frames += 1
+        self.queue.put_nowait(frame)
+
+    def stop(self):
+        if self.readyState == 'ended':
+            return
+        super().stop()
+        self.relay.remove(self)
+        while not self.queue.empty():
+            self.queue.get_nowait()
+        self.queue.put_nowait(None)
+
+
+class BoundedAudioRelay:
+    """One paced capture reader and a bounded FIFO for each active receiver."""
+    def __init__(self):
+        self.source = None
+        self.proxies = set()
+        self.task = None
+
+    def subscribe(self, source):
+        self.source = source
+        return BufferedRelayTrack(self)
+
+    def start(self, proxy):
+        self.proxies.add(proxy)
+        if self.task is None or self.task.done() or self.task.cancelling():
+            self.task = asyncio.create_task(self.pump())
+
+    def remove(self, proxy):
+        self.proxies.discard(proxy)
+        if not self.proxies and self.task is not None:
+            self.task.cancel()
+
+    async def pump(self):
+        try:
+            while self.proxies:
+                frame = await self.source.recv()
+                for proxy in tuple(self.proxies):
+                    proxy.put(frame)
+        except MediaStreamError:
+            for proxy in tuple(self.proxies):
+                proxy.put(None)
+        except asyncio.CancelledError:
+            pass
+        except Exception as exc:
+            log.warning('Audio relay source stopped: %s', type(exc).__name__)
+            for proxy in tuple(self.proxies):
+                proxy.put(None)
+
+    async def close(self):
+        for proxy in tuple(self.proxies):
+            proxy.stop()
+        if self.task is not None:
+            self.task.cancel()
+            await asyncio.gather(self.task, return_exceptions=True)
+        self.task = None
+
+
 class Service:
     def __init__(self, engine, pin=None):
         self.engine = engine
@@ -65,7 +146,7 @@ class Service:
         self.attempts = OrderedDict()
         self.global_attempts = deque()
         self.peers = {}
-        self.relay = MediaRelay()
+        self.relay = BoundedAudioRelay()
 
     def limited(self, address):
         now = time.monotonic()
@@ -103,6 +184,7 @@ class Service:
     async def close(self):
         await asyncio.gather(*(self.remove(key) for key in list(self.peers)))
         self.tokens.clear()
+        await self.relay.close()
 
     async def rotate(self):
         await self.close()
@@ -175,7 +257,7 @@ async def offer(request):
         raise web.HTTPBadRequest(text=receiver_text(request, 'bad_sdp'))
     pc = RTCPeerConnection(RTCConfiguration(iceServers=[]))
     identity = secrets.token_hex(12)
-    track = state.relay.subscribe(state.engine.track(), buffered=False)
+    track = state.relay.subscribe(state.engine.track())
     state.peers[identity] = {'pc': pc, 'track': track, 'address': request.remote, 'token': token, 'created': time.monotonic(), 'expires': state.tokens[token][0]}
 
     @pc.on('connectionstatechange')

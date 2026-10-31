@@ -88,3 +88,40 @@ def test_installer_refusal_never_downloads(tmp_path, monkeypatch):
     monkeypatch.setattr(installer, 'prepare_installer', lambda: pytest.fail('Download before consent'))
     installer.install_vbcable()
     assert app
+
+
+def test_failed_installer_offers_manual_path(monkeypatch):
+    from types import SimpleNamespace
+    from PySide6.QtWidgets import QApplication, QMessageBox
+    app = QApplication.instance() or QApplication([])
+    monkeypatch.setattr(installer.sys, 'platform', 'win32')
+    monkeypatch.setattr(QMessageBox, 'exec', lambda self: 0)
+    monkeypatch.setattr(QMessageBox, 'clickedButton', lambda self: next(b for b in self.buttons() if b.text() == '설치하기'))
+    def fail():
+        raise ValueError('Signature unavailable')
+    monkeypatch.setattr(installer, 'prepare_installer', fail)
+    monkeypatch.setattr(installer.threading, 'Thread', lambda target, **kwargs: SimpleNamespace(start=target))
+    calls = []
+    monkeypatch.setattr(installer, 'manual_install_vbcable', lambda parent, reason='': calls.append(reason))
+    installer.install_vbcable()
+    assert calls == ['Signature unavailable']
+    assert app
+
+
+def test_manual_instructions_open_official_site_and_copy(monkeypatch):
+    from PySide6.QtGui import QDesktopServices
+    from PySide6.QtWidgets import QApplication, QDialog, QPushButton
+    app = QApplication.instance() or QApplication([])
+    opened = []
+    monkeypatch.setattr(QDesktopServices, 'openUrl', lambda url: opened.append(url.toString()) or True)
+    def inspect(dialog):
+        buttons = {b.text(): b for b in dialog.findChildren(QPushButton)}
+        buttons['공식 다운로드 페이지 열기'].click()
+        buttons['설치 안내 복사'].click()
+        return 0
+    monkeypatch.setattr(QDialog, 'exec', inspect)
+    monkeypatch.setattr(installer, 'prepare_installer', lambda: pytest.fail('Manual help must not download or execute'))
+    installer.manual_install_vbcable(reason='Signature unavailable')
+    assert opened == [installer.OFFICIAL_PAGE]
+    assert installer.OFFICIAL_PAGE in app.clipboard().text()
+    assert 'VBCABLE_Setup_x64.exe' in app.clipboard().text()

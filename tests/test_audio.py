@@ -3,7 +3,7 @@ from fractions import Fraction
 
 import numpy as np
 
-from airear.audio import AudioEngine, apply_gain
+from airear.audio import AudioEngine, apply_gain, RATE
 
 
 def test_limiter_has_no_overflow_and_mute():
@@ -15,12 +15,14 @@ def test_limiter_has_no_overflow_and_mute():
     assert np.array_equal(apply_gain(np.array([[100, -100]], dtype=np.int16), 1), [[100, -100]])
 
 
-def test_queue_is_bounded_and_discards_stale_audio():
+def test_queue_is_duration_bounded_and_preserves_fifo():
     engine = AudioEngine()
-    for n in range(100):
-        engine._enqueue(str(n).encode(), 48000, 2)
-    assert len(engine._packets) == 4
-    assert engine._take()[0] == b"98"
+    for n in range(12):
+        engine._enqueue(np.full((960, 2), n, dtype=np.float32).tobytes(), 48000, 2)
+    assert len(engine._packets) == 10
+    assert np.frombuffer(engine._take()[0], dtype=np.float32)[0] == 2
+    assert engine.metrics()["dropped_samples"] == 1920
+    assert engine.metrics()["queued_ms"] == 180
 
 
 def test_continuous_silence_and_sample_timestamps():
@@ -42,7 +44,7 @@ def test_resamples_mono_44100_to_stereo_and_keeps_signal():
     async def run():
         engine = AudioEngine()
         # Provide enough source samples to account for the resampler's filter delay.
-        wave = (0.1 * np.sin(np.arange(1764) * 2 * np.pi * 440 / 44100)).astype(np.float32)
+        wave = (0.1 * np.sin(np.arange(3528) * 2 * np.pi * 440 / 44100)).astype(np.float32)
         engine._enqueue(wave.tobytes(), 44100, 1)
         frame = await engine.track().recv()
         out = frame.to_ndarray().reshape(-1, 2)
@@ -55,7 +57,7 @@ def test_resamples_mono_44100_to_stereo_and_keeps_signal():
 
 def test_device_change_flushes_captured_packets():
     engine = AudioEngine()
-    engine._enqueue(b"old", 48000, 2)
+    engine._enqueue(np.full((960, 2), 0.1, dtype=np.float32).tobytes(), 48000, 2)
     engine.select(123)
     assert engine.device_id == 123
     assert engine._take() is None
@@ -64,7 +66,7 @@ def test_device_change_flushes_captured_packets():
 def test_surround_center_channel_is_included_in_downmix():
     async def run():
         engine = AudioEngine()
-        block = np.zeros((960, 6), dtype=np.float32)
+        block = np.zeros((2880, 6), dtype=np.float32)
         block[:, 2] = 0.1  # dialogue in the center channel of a 5.1 output
         engine._enqueue(block.tobytes(), 48000, 6)
         frame = await engine.track().recv()
@@ -242,3 +244,83 @@ def test_mock_explicit_device_selection_reopens_capture(monkeypatch):
         assert engine._selected_name == "Speaker B"
     finally:
         engine.stop()
+
+
+def no_pacing(monkeypatch):
+    from types import SimpleNamespace
+    from airear import audio
+    clock = [0.0]
+    async def sleep(delay):
+        clock[0] += delay
+    monkeypatch.setattr(audio, 'time', SimpleNamespace(monotonic=lambda: clock[0]))
+    monkeypatch.setattr(audio.asyncio, 'sleep', sleep)
+
+
+def block(frames, value=0.1):
+    return np.full((frames, 2), value, dtype=np.float32).tobytes()
+
+
+def test_jittered_callback_bursts_do_not_discard_audio_or_insert_gaps(monkeypatch):
+    no_pacing(monkeypatch)
+    async def run():
+        engine = AudioEngine()
+        track = engine.track()
+        # Same average capture/render rate, with callbacks grouped and delayed by 20 ms.
+        for tick in range(30):
+            if tick == 0:
+                engine._enqueue(block(2880), RATE, 2)
+            elif tick % 6 in (3, 5, 0):
+                engine._enqueue(block(1920), RATE, 2)
+            frame = await track.recv()
+            assert np.all(frame.to_ndarray() > 0), tick
+            assert frame.pts == tick * 960
+        assert engine.metrics()['underruns'] == 0
+        assert engine.metrics()['dropped_samples'] == 0
+    asyncio.run(run())
+
+
+def test_100ms_callback_keeps_all_samples(monkeypatch):
+    no_pacing(monkeypatch)
+    async def run():
+        engine = AudioEngine()
+        engine._enqueue(block(4800), RATE, 2)
+        track = engine.track()
+        for _ in range(5):
+            assert np.all((await track.recv()).to_ndarray() > 0)
+        assert engine.metrics()['dropped_samples'] == 0
+        assert engine.metrics()['buffered_ms'] == 0
+    asyncio.run(run())
+
+
+def test_underflow_rebuffers_once_and_resumes_continuous_audio(monkeypatch):
+    no_pacing(monkeypatch)
+    async def run():
+        engine = AudioEngine()
+        engine._enqueue(block(2880), RATE, 2)
+        track = engine.track()
+        for _ in range(3):
+            await track.recv()
+        assert not (await track.recv()).to_ndarray().any()
+        engine._enqueue(block(960), RATE, 2)
+        assert not (await track.recv()).to_ndarray().any()
+        assert engine.metrics()['underruns'] == 1
+        engine._enqueue(block(1920), RATE, 2)
+        assert (await track.recv()).to_ndarray().any()
+        assert not engine.metrics()['buffering']
+    asyncio.run(run())
+
+
+def test_same_format_device_switch_discards_pending_old_audio(monkeypatch):
+    no_pacing(monkeypatch)
+    async def run():
+        engine = AudioEngine()
+        engine._enqueue(block(4800, 0.5), RATE, 2)
+        track = engine.track()
+        await track.recv()
+        engine.select(8)
+        engine._enqueue(block(2880, -0.25), RATE, 2)
+        assert np.all((await track.recv()).to_ndarray() < 0)
+        # A callback belonging to the closing device must not enter the new queue.
+        engine._enqueue(block(960, 0.5), RATE, 2, generation=0)
+        assert engine._take() is None
+    asyncio.run(run())

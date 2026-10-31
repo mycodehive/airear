@@ -20,6 +20,8 @@ from aiortc import AudioStreamTrack
 LOG = logging.getLogger(__name__)
 RATE = 48_000
 SAMPLES = 960
+PREBUFFER_SAMPLES = SAMPLES * 3
+MAX_BUFFER_SAMPLES = SAMPLES * 10
 
 
 def apply_gain(samples: np.ndarray, gain: float, muted: bool = False) -> np.ndarray:
@@ -48,7 +50,11 @@ class AudioEngine:
         self._poll_interval = 0.2
         self._retry_interval = 2.0
         self._default_check_interval = 2.0
-        self._packets: deque[tuple[bytes, int, int]] = deque(maxlen=4)
+        self._packets: deque[tuple[bytes, int, int]] = deque()
+        self._queued_seconds = 0.0
+        self._buffer_generation = 0
+        self._diagnostics = dict(buffered_ms=0.0, buffering=True, underruns=0, dropped_packets=0,
+                                 dropped_samples=0, callback_warnings=0, scheduler_resets=0)
         self._lock = threading.Lock()
         self._stop = threading.Event()
         self._reopen = threading.Event()
@@ -91,6 +97,8 @@ class AudioEngine:
             self._selected_name = self._device_names.get(device_id)
             self._selection_generation += 1
             self._packets.clear()
+            self._queued_seconds = 0.0
+            self._buffer_generation += 1
         self._reopen.set()
 
     def start(self) -> None:
@@ -108,7 +116,11 @@ class AudioEngine:
             self._thread.join(timeout=4)
         with self._lock:
             self._packets.clear()
+            self._queued_seconds = 0.0
+            self._buffer_generation += 1
         self.level = 0.0
+        with self._lock:
+            self._diagnostics.update(buffered_ms=0.0, buffering=True)
         if self._track is not None:
             self._track.stop()
             self._track = None
@@ -118,16 +130,38 @@ class AudioEngine:
             self._track = LoopbackTrack(self)
         return self._track
 
-    def _enqueue(self, data: bytes, rate: int, channels: int) -> None:
+    def metrics(self) -> dict:
+        """Snapshot capture/stream health without exposing captured audio."""
         with self._lock:
+            return {**self._diagnostics, "queued_ms": round(self._queued_seconds * 1000, 2)}
+
+    def _enqueue(self, data: bytes, rate: int, channels: int, generation=None) -> None:
+        if not data or rate <= 0 or channels <= 0 or len(data) % (4 * channels):
+            return
+        with self._lock:
+            if generation is not None and generation != self._selection_generation:
+                return
             self._packets.append((data, rate, channels))
+            self._queued_seconds += len(data) / (4 * channels * rate)
+            # A time limit, rather than a packet-count limit, tolerates callback bursts.
+            while self._packets and (self._queued_seconds > MAX_BUFFER_SAMPLES / RATE + 1e-9 or len(self._packets) > 64):
+                block, hz, count = self._packets.popleft()
+                frames = len(block) // (4 * count)
+                excess = self._queued_seconds - MAX_BUFFER_SAMPLES / RATE
+                discard = frames if len(self._packets) >= 64 else min(frames, max(1, int(excess * hz + 0.999999)))
+                self._queued_seconds -= discard / hz
+                self._diagnostics["dropped_samples"] += round(discard * RATE / hz)
+                self._diagnostics["dropped_packets"] += 1
+                if discard < frames:
+                    self._packets.appendleft((block[discard * count * 4:], hz, count))
 
     def _take(self):
         with self._lock:
-            # Favor current audio after a slow consumer instead of replaying stale buffers.
-            while len(self._packets) > 2:
-                self._packets.popleft()
-            return self._packets.popleft() if self._packets else None
+            if not self._packets:
+                return None
+            packet = self._packets.popleft()
+            self._queued_seconds = max(0.0, self._queued_seconds - len(packet[0]) / (4 * packet[2] * packet[1]))
+            return packet
 
     def _capture(self) -> None:
         while not self._stop.is_set():
@@ -162,8 +196,10 @@ class AudioEngine:
 
                 def callback(data, frame_count, time_info, status):
                     if status:
+                        with self._lock:
+                            self._diagnostics["callback_warnings"] += 1
                         LOG.debug("WASAPI callback status: %s", status)
-                    self._enqueue(data, rate, channels)
+                    self._enqueue(data, rate, channels, generation)
                     return (None, module.paContinue)
 
                 stream = audio.open(format=module.paFloat32, channels=channels, rate=rate,
@@ -196,6 +232,8 @@ class AudioEngine:
                     audio.terminate()
                 with self._lock:
                     self._packets.clear()
+                    self._queued_seconds = 0.0
+                    self._buffer_generation += 1
 
 
 class LoopbackTrack(AudioStreamTrack):
@@ -209,6 +247,8 @@ class LoopbackTrack(AudioStreamTrack):
         self._resampler = av.AudioResampler(format="s16", layout="stereo", rate=RATE)
         self._format: tuple[int, int] | None = None
         self._pending = np.empty((0, 2), dtype=np.int16)
+        self._generation = engine._buffer_generation
+        self._buffering = True
 
     def _convert(self, packet) -> None:
         data, rate, channels = packet
@@ -233,30 +273,51 @@ class LoopbackTrack(AudioStreamTrack):
         frame.sample_rate = rate
         for converted in self._resampler.resample(frame):
             block = converted.to_ndarray().reshape(-1, 2)
-            self._pending = np.concatenate((self._pending, block))[-SAMPLES * 4:]
+            self._pending = np.concatenate((self._pending, block))
+            excess = len(self._pending) - MAX_BUFFER_SAMPLES
+            if excess > 0:
+                self._pending = self._pending[excess:]
+                with self.engine._lock:
+                    self.engine._diagnostics["dropped_samples"] += excess
 
     async def recv(self) -> av.AudioFrame:
         from aiortc.mediastreams import MediaStreamError
         if self.readyState != "live":
             raise MediaStreamError
         now = time.monotonic()
-        if self._deadline is None or now - self._deadline > 0.1:
+        if self._deadline is None:
             self._deadline = now
+        elif now - self._deadline > 0.1:
+            # Catch up short scheduler delays; reset only after a substantial stall.
+            self._deadline = now
+            with self.engine._lock:
+                self.engine._diagnostics["scheduler_resets"] += 1
         await asyncio.sleep(max(0, self._deadline - now))
         self._deadline += SAMPLES / RATE
-        # A bounded loop protects the event loop even if a device returns unusual block sizes.
-        for _ in range(4):
-            if len(self._pending) >= SAMPLES:
-                break
+        if self._generation != self.engine._buffer_generation:
+            self._generation = self.engine._buffer_generation
+            self._pending = np.empty((0, 2), dtype=np.int16)
+            self._format = None
+            self._buffering = True
+        # Drain a bounded number of callback blocks; preserve FIFO audio between them.
+        for _ in range(64):
             packet = self.engine._take()
             if packet is None:
                 break
             self._convert(packet)
-        count = min(SAMPLES, len(self._pending))
+        if self._buffering and len(self._pending) >= PREBUFFER_SAMPLES:
+            self._buffering = False
+        if not self._buffering and len(self._pending) < SAMPLES:
+            self._buffering = True
+            with self.engine._lock:
+                self.engine._diagnostics["underruns"] += 1
         output = np.zeros((SAMPLES, 2), dtype=np.int16)
-        if count:
-            output[:count] = self._pending[:count]
-            self._pending = self._pending[count:]
+        if not self._buffering:
+            output[:] = self._pending[:SAMPLES]
+            self._pending = self._pending[SAMPLES:]
+        with self.engine._lock:
+            self.engine._diagnostics["buffered_ms"] = round(len(self._pending) * 1000 / RATE, 2)
+            self.engine._diagnostics["buffering"] = self._buffering
         self.engine.level = min(1.0, float(np.sqrt(np.mean(output.astype(np.float32) ** 2))) / 32768)
         output = apply_gain(output, self.engine.gain, self.engine.muted)
         frame = av.AudioFrame.from_ndarray(output.reshape(1, -1), format="s16", layout="stereo")
