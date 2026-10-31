@@ -74,7 +74,7 @@ class Window(QMainWindow):
         self._active_protocol = 'http'
         self._active_port = self.settings.port
         self.setWindowTitle('AirEar · Windows Audio → Phone 1.0.1')
-        self.resize(1080, 840)
+        self.resize(840, 720)
         self.setMinimumSize(400, 350)
         self.engine.gain = self.settings.gain
         self.engine.select(self.settings.device_id)
@@ -247,12 +247,12 @@ class Window(QMainWindow):
 
     def _build_phone(self):
         card = self._card('phone', '03  휴대폰 연결', '휴대폰 브라우저에서 주소를 열고 PIN을 입력한 후 듣기 시작을 누르세요. QR에는 PIN이 포함되지 않습니다.')
-        self.address = QComboBox()
-        self.address.setEditable(True)
-        self.address.addItems(lan_addresses())
+        self.address = QLineEdit()
+        addresses = lan_addresses()
+        self.address.setText(addresses[0] if addresses else '')
         if self.settings.advertised_host:
-            self.address.setCurrentText(self.settings.advertised_host)
-        self.address.currentTextChanged.connect(self.update_url)
+            self.address.setText(self.settings.advertised_host)
+        self.address.textChanged.connect(self.update_url)
         row = QHBoxLayout()
         row.addWidget(QLabel('LAN 주소'))
         row.addWidget(self.address, 1)
@@ -430,7 +430,7 @@ class Window(QMainWindow):
     def update_url(self, *_):
         if not hasattr(self, 'qr'):
             return
-        host = self.address.currentText().strip()
+        host = self.address.text().strip()
         try:
             parsed = ipaddress.ip_address(host)
             valid = parsed.version == 4 and parsed.is_private and not parsed.is_loopback and not parsed.is_unspecified
@@ -566,7 +566,7 @@ class Window(QMainWindow):
             self.settings.tls_cert = cert.text().strip()
             self.settings.tls_key = key.text().strip()
             self.settings.check_updates = update.isChecked()
-            self.settings.advertised_host = self.address.currentText().strip()
+            self.settings.advertised_host = self.address.text().strip()
             self.save_controls()
             self.apply_theme()
 
