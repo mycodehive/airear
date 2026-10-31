@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "airear"
-version = "1.0.0"
+version = "1.0.1"
 description = "Windows WASAPI system audio to phone Safari over local WebRTC"
 requires-python = ">=3.12,<3.13"
 dependencies = [

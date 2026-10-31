@@ -83,3 +83,7 @@ uv run --locked --extra dev python -m airear
 The locked dependencies include the Python desktop UI, audio engine, web server, receiver assets, and build tools. The EXE bundles the Python runtime; VB-CABLE remains a separately installed driver. Versioned release commits and tags publish through Windows CI; versions with a prerelease suffix remain prereleases. Automatic updates use stable GitHub Releases.
 
 [Installation details](docs/INSTALL.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Release process](docs/RELEASING.md)
+
+### v1.0.1 playback update
+
+The phone receiver now uses the native HTML audio player, matching the earlier v1.3 playback path. Adjust listening volume using the phone volume buttons. Backgrounding the page no longer explicitly disconnects the stream. Existing server-side FIFO smoothing is retained. Screen-lock playback still depends on the device/browser and needs confirmation on the affected phone.
