@@ -67,6 +67,8 @@ def launch_replacement(staged: Path):
     def literal(path):
         return "'" + str(path).replace("'", "''") + "'"
     # User-level helper; never uses elevation. Backup and rollback on failed copy.
+    from .i18n import tr
+    update_failed = tr("업데이트 실패. 기존 EXE를 다시 실행하세요.").replace("'", "''")
     script.write_text(
         "$ErrorActionPreference='Stop'\n"
         f"Wait-Process -Id {os.getpid()} -ErrorAction SilentlyContinue\n"
@@ -76,7 +78,7 @@ def launch_replacement(staged: Path):
         " Start-Process -FilePath $target\n} catch {\n"
         " if (Test-Path -LiteralPath $backup) { Copy-Item -LiteralPath $backup -Destination $target -Force }\n"
         " Add-Type -AssemblyName PresentationFramework\n"
-        " [System.Windows.MessageBox]::Show('업데이트 실패. 기존 EXE를 다시 실행하세요.')\n}\n",
+        f" [System.Windows.MessageBox]::Show('{update_failed}')\n}}\n",
         encoding="utf-8-sig")
     subprocess.Popen(["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script)],
                      creationflags=0x08000000, close_fds=True)
