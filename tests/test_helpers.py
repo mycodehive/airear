@@ -56,11 +56,11 @@ def test_settings_roundtrip_and_corruption(tmp_path, monkeypatch):
 
 
 def test_release_selection_requires_assets_and_new_version(monkeypatch):
-    release = {'tag_name': 'v1.0.3', 'assets': [
-        {'name': name, 'browser_download_url': f'https://github.com/mycodehive/airear/releases/download/v1.0.3/{name}'}
+    release = {'tag_name': 'v1.0.4', 'assets': [
+        {'name': name, 'browser_download_url': f'https://github.com/mycodehive/airear/releases/download/v1.0.4/{name}'}
         for name in ['AirEar.exe', 'SHA256SUMS.txt']]}
     monkeypatch.setattr(updater, 'fetch', lambda *a: json.dumps(release).encode())
-    assert updater.latest_release()['tag'] == 'v1.0.3'
+    assert updater.latest_release()['tag'] == 'v1.0.4'
     release['prerelease'] = True
     assert updater.latest_release() is None
     release.pop('prerelease')
@@ -125,3 +125,53 @@ def test_manual_instructions_open_official_site_and_copy(monkeypatch):
     assert opened == [installer.OFFICIAL_PAGE]
     assert installer.OFFICIAL_PAGE in app.clipboard().text()
     assert 'VBCABLE_Setup_x64.exe' in app.clipboard().text()
+
+
+def test_download_reports_bytes_and_rejects_truncation(tmp_path, monkeypatch):
+    from airear import downloads
+    from types import SimpleNamespace
+    import io
+    def response(data, size):
+        stream = io.BytesIO(data)
+        stream.headers = {'Content-Length': str(size)}
+        return stream
+    current = [response(b'abc', 3)]
+    monkeypatch.setattr(downloads, 'build_opener', lambda *a: SimpleNamespace(open=lambda *a, **k: current[0]))
+    updates = []
+    target = tmp_path / 'app.exe'
+    downloads.download('https://github.com/app', target, {'github.com'}, 100, lambda n, total: updates.append((n, total)))
+    assert updates == [(0, 3), (3, 3)]
+    assert target.read_bytes() == b'abc'
+    current[0] = response(b'ab', 3)
+    with pytest.raises(ValueError):
+        downloads.download('https://github.com/app', target, {'github.com'}, 100)
+    assert not target.exists()
+
+
+def test_update_button_shows_download_progress_and_recovers(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMessageBox
+    app = QApplication.instance() or QApplication([])
+    parent = QWidget()
+    parent.update_button = QPushButton('업데이트 확인', parent)
+    monkeypatch.setattr(updater, 'latest_release', lambda: {'tag': 'v9.0.0'})
+    monkeypatch.setattr(QMessageBox, 'question', lambda *a: QMessageBox.StandardButton.Yes)
+    monkeypatch.setattr(QMessageBox, 'information', lambda *a: None)
+    monkeypatch.setattr(updater.sys, 'frozen', False, raising=False)
+    monkeypatch.setattr(updater.threading, 'Thread', lambda target, **k: SimpleNamespace(start=target))
+    seen = []
+    def staged(release, progress):
+        assert not parent.update_button.isEnabled()
+        progress('download', 25)
+        seen.append(parent.update_button.text())
+        progress('download', 75)
+        seen.append(parent.update_button.text())
+        progress('verify', 100)
+        seen.append(parent.update_button.text())
+        return tmp_path / 'AirEar.exe'
+    monkeypatch.setattr(updater, 'stage_update', staged)
+    updater.check_for_update(parent)
+    assert '25%' in seen[0] and '75%' in seen[1] and '100%' in seen[2]
+    assert parent.update_button.isEnabled() and not parent._update_busy
+    parent.close()
+    assert app
