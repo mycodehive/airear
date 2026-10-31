@@ -1,18 +1,12 @@
-# AirEar v1.0.1
+# AirEar v1.0.2
 
-## Playback fix
+- Create editable **ko.json** and **en.json** automatically in `%LOCALAPPDATA%\AirEar\languages`. Desktop and phone interfaces read these external files; existing user edits are preserved.
+- Reduce the default window to **840 × 720 logical pixels**, matching a compact desktop layout while retaining scrolling.
+- Replace the LAN address dropdown with a text field, preventing accidental mouse-wheel address changes.
+- Update checks run when the app starts and every four hours when enabled. New stable versions prompt the user.
 
-- Restore direct HTML audio playback (`audio.srcObject` + `audio.play()`) used by the earlier v1.3 receiver, replacing the Web Audio/AudioContext output path.
-- Do not explicitly disconnect on pagehide or background transitions.
-- Keep the received stream available when autoplay is blocked so a tap can retry playback without reconnecting.
-- Allow a short grace period for transient peer disconnections.
-- Use phone volume buttons and native player controls for listening volume. The PC transmit gain remains independent.
-- Retain the v1.0.0 capture FIFO, prebuffering, bounded receiver queues, and network statistics.
+The native phone playback and audio smoothing from v1.0.1 remain included.
 
-Download **AirEar.exe**, close the previous app, and replace it. Refresh the phone receiver page after restarting the PC app so the new playback code loads. Automatic update checks can discover this stable version.
+Download **AirEar.exe** and run it without installing Python, or use the app's update check. Close the existing app before manually replacing the EXE. SHA256SUMS.txt is included for integrity verification.
 
-The earlier v1.3 receiver kept playing with the screen locked on the user's phone. This release restores that playback path; screen-lock behavior on this new build has not yet been physically verified. No universal background-playback guarantee is made.
-
-Windows CI runs Python/JavaScript regression tests, lint, onefile packaging, AMD64 PE checks, frozen EXE smoke execution and SHA256 generation before publishing.
-
-The EXE is unsigned; SmartScreen may show a warning. Python is bundled. Optional VB-CABLE installation and trusted-LAN/HTTPS guidance remain unchanged.
+The EXE is unsigned and Windows SmartScreen may show a warning. Actual device/browser screen-lock playback and end-to-end latency still depend on the environment.
