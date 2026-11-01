@@ -56,11 +56,11 @@ def test_settings_roundtrip_and_corruption(tmp_path, monkeypatch):
 
 
 def test_release_selection_requires_assets_and_new_version(monkeypatch):
-    release = {'tag_name': 'v1.0.4', 'assets': [
-        {'name': name, 'browser_download_url': f'https://github.com/mycodehive/airear/releases/download/v1.0.4/{name}'}
+    release = {'tag_name': 'v1.0.5', 'assets': [
+        {'name': name, 'browser_download_url': f'https://github.com/mycodehive/airear/releases/download/v1.0.5/{name}'}
         for name in ['AirEar.exe', 'SHA256SUMS.txt']]}
     monkeypatch.setattr(updater, 'fetch', lambda *a: json.dumps(release).encode())
-    assert updater.latest_release()['tag'] == 'v1.0.4'
+    assert updater.latest_release()['tag'] == 'v1.0.5'
     release['prerelease'] = True
     assert updater.latest_release() is None
     release.pop('prerelease')
