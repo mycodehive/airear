@@ -34,25 +34,53 @@ class _Bridge(QObject):
 
 
 def lan_addresses() -> list[str]:
-    """Local interface discovery only; no connection to public discovery servers."""
-    addresses = set()
+    """Return private IPv4 addresses assigned to active local interfaces."""
+    addresses: set[str] = set()
     try:
         from PySide6.QtNetwork import QNetworkInterface
+
         for interface in QNetworkInterface.allInterfaces():
+            flags = interface.flags()
+            required = QNetworkInterface.InterfaceFlag.IsUp | QNetworkInterface.InterfaceFlag.IsRunning
+            if flags & required != required:
+                continue
             for entry in interface.addressEntries():
                 text = entry.ip().toString()
-                try:
-                    address = ipaddress.ip_address(text)
-                    if address.version == 4 and address.is_private and not address.is_loopback:
-                        addresses.add(text)
-                except ValueError:
-                    continue
+                if _is_private_lan_ipv4(text):
+                    addresses.add(text)
     except Exception:
-        for item in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
-            address = item[4][0]
-            if not address.startswith('127.'):
-                addresses.add(address)
-    return sorted(addresses)
+        LOG.debug('Qt network interface discovery failed; using hostname fallback', exc_info=True)
+
+    # Hostname lookup is a fallback only. Filter it the same way as interface
+    # enumeration so a public/VPN address can never become the QR default.
+    if not addresses:
+        try:
+            for item in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
+                text = item[4][0]
+                if _is_private_lan_ipv4(text):
+                    addresses.add(text)
+        except OSError:
+            LOG.debug('Hostname address lookup failed', exc_info=True)
+
+    def priority(text: str) -> tuple[int, int]:
+        address = ipaddress.IPv4Address(text)
+        # Prefer the common home/office Wi-Fi range, then other RFC1918 LANs.
+        network_priority = 0 if address in ipaddress.IPv4Network('192.168.0.0/16') else 1
+        return network_priority, int(address)
+
+    return sorted(addresses, key=priority)
+
+
+def _is_private_lan_ipv4(value: str) -> bool:
+    try:
+        address = ipaddress.IPv4Address(value)
+    except ipaddress.AddressValueError:
+        return False
+    return any(address in network for network in (
+        ipaddress.IPv4Network('10.0.0.0/8'),
+        ipaddress.IPv4Network('172.16.0.0/12'),
+        ipaddress.IPv4Network('192.168.0.0/16'),
+    ))
 
 
 class Window(QMainWindow):
@@ -250,8 +278,6 @@ class Window(QMainWindow):
         self.address = QLineEdit()
         addresses = lan_addresses()
         self.address.setText(addresses[0] if addresses else '')
-        if self.settings.advertised_host:
-            self.address.setText(self.settings.advertised_host)
         self.address.textChanged.connect(self.update_url)
         row = QHBoxLayout()
         row.addWidget(QLabel('LAN 주소'))
@@ -566,7 +592,6 @@ class Window(QMainWindow):
             self.settings.tls_cert = cert.text().strip()
             self.settings.tls_key = key.text().strip()
             self.settings.check_updates = update.isChecked()
-            self.settings.advertised_host = self.address.text().strip()
             self.save_controls()
             self.apply_theme()
 
