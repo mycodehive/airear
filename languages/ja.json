@@ -1,0 +1,125 @@
+{
+  "brand": {
+    "tagline": "PCの音をスマートフォンで",
+    "eyebrow": "プライベートLANオーディオ"
+  },
+  "nav": {
+    "dashboard": "概要",
+    "connection": "スマートフォン接続",
+    "settings": "設定",
+    "diagnostics": "ログと診断"
+  },
+  "title": "PCの音をスマートフォンで聴く",
+  "status": {
+    "stopped": "サーバー停止中",
+    "running": "サーバー稼働中"
+  },
+  "hero": {
+    "badge": "イヤホンはスマートフォンに接続",
+    "title": "イヤホンはスマートフォンに接続したまま。",
+    "body": "カフェや図書館などで、同じWi-Fiを使ってPCの音をスマートフォンに送信できます。イヤホンをPCとスマートフォンで付け替える必要はありません。",
+    "captureNote": "Windowsのシステム音声ミックスをキャプチャします。配信前にWindowsのサウンド設定で出力デバイスを選択してください。"
+  },
+  "button": {
+    "startBroadcast": "配信開始",
+    "stopBroadcast": "配信停止",
+    "startServer": "サーバー開始",
+    "stopServer": "サーバー停止",
+    "copy": "コピー",
+    "disconnect": "切断",
+    "openLog": "ログを開く",
+    "copyDiagnostics": "診断情報をコピー",
+    "checkUpdates": "更新を確認"
+  },
+  "server": {
+    "title": "LANサーバー",
+    "description": "同じWi-Fi上のスマートフォンが接続できるようローカルサービスを開始します。",
+    "port": "ポート",
+    "autoStart": "AirEar起動時にLANサーバーを開始"
+  },
+  "audio": {
+    "title": "音声配信",
+    "idle": "配信停止中",
+    "live": "配信中",
+    "description": "ElectronがWindowsのシステム音声ループバックをキャプチャしてスマートフォンへ送信します。",
+    "volume": "配信音量",
+    "mute": "ミュート",
+    "cable": "PCスピーカーから音を出さない場合は、VB-CABLEをWindowsの既定の出力に設定してください。"
+  },
+  "phone": {
+    "title": "スマートフォン接続",
+    "receivers": "台",
+    "description": "同じWi-Fiに接続したスマートフォンでこのURLを開き、PINを入力して再生を押してください。",
+    "lanAddress": "PCのLANアドレス",
+    "waiting": "サーバーを開始すると接続URLが表示されます。",
+    "noAddress": "プライベートLANアドレスがありません。Wi-Fi接続を確認してください。",
+    "pin": "接続PIN",
+    "qrHint": "QRにはアドレスのみ含まれます。PINは別途入力してください。",
+    "receiver": "受信端末",
+    "connectHelp": "両方の端末を同じプライベートWi-Fiに接続し、QRをスキャンします。PINを入力してブラウザーで再生を押してください。",
+    "kicker": "プライベートWi-Fiオーディオ",
+    "hero": "スマートフォンで快適に聴く。",
+    "intro": "AirEarデスクトップアプリに表示された接続PINを入力してください。",
+    "listen": "接続して再生",
+    "disconnect": "切断",
+    "pinInvalid": "8桁のPINを入力してください。",
+    "connecting": "接続中…",
+    "reconnecting": "ネットワークに再接続しています…",
+    "networkError": "ネットワーク接続を確認してください。",
+    "pinIncorrect": "PINが正しくありません。",
+    "capacity": "接続可能な受信端末数を超えています。",
+    "notStreaming": "先にPCで音声配信を開始してください。",
+    "waitingAudio": "PCの音声を待っています…",
+    "connectionFailed": "音声接続に失敗しました。再接続してください。",
+    "tapPlay": "再生ボタンを押して音声を開始してください。",
+    "networkInterrupted": "接続が中断されました。自動的に再接続します。",
+    "disconnected": "切断しました。",
+    "negotiating": "音声接続を準備しています…",
+    "connected": "接続済み · 再生中。",
+    "volume": "スマートフォンの音量ボタンで音量を調節してください。",
+    "earphonesTitle": "イヤホン1つで切り替えを減らす",
+    "earphones": "イヤホンをスマートフォンに接続してください。PCの音声が同じWi-Fi経由で届きます。",
+    "airpods": "AirPodsなどのBluetoothイヤホンも通常どおり使用できます。",
+    "background": "画面ロック中やバックグラウンドでの再生はOSやブラウザーの電源管理により制限される場合があります。"
+  },
+  "clients": {
+    "title": "接続中のスマートフォン",
+    "empty": "接続中の端末はありません",
+    "connected": "接続済み"
+  },
+  "security": {
+    "notice": "プライベートLAN専用です。HTTPシグナリングは暗号化されません。信頼できるWi-Fiで使用し、インターネットからポート転送しないでください。"
+  },
+  "settings": {
+    "title": "アプリ設定",
+    "theme": "テーマ",
+    "system": "システム設定",
+    "light": "ライト",
+    "dark": "ダーク",
+    "updates": "更新を確認",
+    "updateNow": "更新状態",
+    "firstUpdate": "初回Electron版はWindowsセットアップでインストールします。既存のPython EXEユーザーは新しいセットアップを一度実行してください。"
+  },
+  "diagnostics": {
+    "title": "ログと診断",
+    "description": "ログはWindowsユーザーフォルダーに保存されます。PINとセッショントークンは記録されません。"
+  },
+  "footer": {
+    "lan": "プライベートLAN音声配信",
+    "screen": "画面ロック中の再生はブラウザーとOSの動作に依存します。"
+  },
+  "error": {
+    "serverStart": "サーバーを開始できませんでした。",
+    "serverStop": "サーバーを停止できませんでした。",
+    "noAudioTrack": "システム音声トラックが見つかりません。",
+    "capture": "システム音声キャプチャを開始できませんでした。",
+    "signaling": "シグナリングサービスに接続できません。"
+  },
+  "update": {
+    "available": "更新があります",
+    "downloading": "ダウンロード中",
+    "downloaded": "更新準備完了",
+    "install": "再起動してインストール",
+    "none": "最新バージョンです。"
+  }
+}
