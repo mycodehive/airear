@@ -1,89 +1,68 @@
-<p align="center"><img src="src/airear/assets/airear.png" alt="AirEar 아이콘" width="144"></p>
-
 # AirEar
 
-**PC의 소리를 휴대폰으로. 이어폰은 하나면 충분합니다.**
+AirEar는 Windows에서 재생되는 시스템 오디오를 같은 개인 Wi-Fi의 휴대폰 브라우저로 실시간 전송합니다. 카페나 도서관에서도 이어폰을 휴대폰에 연결해 둔 채 PC 소리를 들을 수 있어, 이어폰을 PC와 휴대폰 사이에서 번갈아 연결할 필요가 없습니다.
 
-[English README](README.md)
+[English README](README.md) · [설치 안내](docs/INSTALL.md) · [문제 해결](docs/TROUBLESHOOTING.md) · [언어 파일 안내](docs/LANGUAGES.md)
 
-AirEar는 윈도우 PC에서 재생되는 소리를 가까운 휴대폰의 웹브라우저로 전달합니다. 이어폰을 휴대폰에 연결한 채로 PC의 강의, 영상, 음악을 들어 보세요. 기기를 바꿀 때마다 이어폰을 휴대폰에서 해제하고 PC에 다시 연결하는 번거로움을 줄일 수 있습니다.
+## 동작 방식
 
-카페나 도서관에서는 윈도우 소리를 가상 오디오 장치로 보내 PC 스피커를 조용하게 유지하고, 휴대폰에 연결된 이어폰으로 들을 수 있습니다. PC에서 AirEar를 실행하고 휴대폰에서는 브라우저 페이지만 열면 됩니다. 별도 휴대폰 앱은 설치하지 않습니다.
+```text
+Windows 시스템 오디오 → Electron 루프백 캡처 → WebRTC/Opus → 휴대폰 브라우저
+```
 
-## 연결 구조
+휴대폰에 앱을 설치할 필요가 없습니다. Safari, Chrome 등 모바일 브라우저에서 LAN 주소를 열고 AirEar에 표시된 PIN을 입력한 뒤 **연결하고 듣기**를 누르세요. AirPods 등 Bluetooth 이어폰은 휴대폰에 연결한 상태로 사용할 수 있습니다.
 
-윈도우 오디오 → WASAPI 루프백 → 로컬 WebRTC 연결 → 휴대폰 브라우저 → 휴대폰 스피커 또는 연결된 이어폰.
+## 설치
 
-특정 휴대폰 브랜드에 한정하지 않고 WebRTC와 Web Audio를 지원하는 브라우저를 수신기로 사용합니다. Safari, Chrome 등 최신 브라우저로 사용할 수 있도록 설계했으며, 실제 기종·브라우저별 동작은 실기기 확인이 필요합니다. 다른 휴대폰 앱의 소리나 전화와 자동으로 섞이거나 자연스럽게 전환되는 동작까지 보장하지는 않습니다.
+1. [GitHub Releases](https://github.com/mycodehive/airear/releases)에서 최신 **AirEar-Setup-x64.exe**를 받습니다.
+2. 사용자별 설치 프로그램을 실행합니다. 기본적으로 관리자 권한을 요구하지 않습니다.
+3. AirEar를 실행합니다. 현재 설치 파일은 코드 서명되지 않아 Windows SmartScreen 경고가 나타날 수 있습니다.
+4. 앱은 실행 시와 4시간마다 GitHub Releases 업데이트를 확인합니다. 업데이트 다운로드는 사용자가 업데이트 버튼을 눌렀을 때 시작합니다.
 
-## 윈도우 설치
-
-준비물은 Windows 10/11 x64 PC와 같은 신뢰할 수 있는 로컬 네트워크에 연결된 휴대폰입니다.
-
-1. 릴리스가 게시되면 [GitHub Releases](https://github.com/mycodehive/airear/releases)에서 `AirEar.exe`를 내려받습니다.
-2. 현재 개발 빌드는 성공한 [Windows EXE Actions 실행](https://github.com/mycodehive/airear/actions)을 열고 `AirEar-x64` 아티팩트를 내려받아 압축을 풉니다. Actions 다운로드에는 GitHub 로그인이 필요할 수 있습니다.
-3. 쓰기 가능한 폴더에 EXE를 저장한 뒤 실행합니다. **Python을 따로 설치할 필요가 없습니다.**
-4. PC 스피커를 조용하게 유지하려면 선택 사항인 VB-CABLE 설치 안내에 동의하고 공식 드라이버 설치 화면을 진행합니다. 관리자 승인이나 재부팅이 필요할 수 있습니다. 나중에 설치를 선택하고 일반 출력 장치로 먼저 시험할 수도 있습니다.
-
-빌드에는 SHA256 체크섬이 포함됩니다. PowerShell에서 `Get-FileHash .\AirEar.exe -Algorithm SHA256`을 실행해 `SHA256SUMS.txt`와 비교할 수 있습니다. 현재 EXE는 코드 서명이 없어 Windows SmartScreen 경고가 나타날 수 있습니다.
+Electron 설치 프로그램은 기존 Python `AirEar.exe`와 설치 방식이 다릅니다. 기존 버전에서 옮길 때는 프로그램을 종료하고 새 설치 프로그램을 한 번 실행하세요. `%LOCALAPPDATA%\AirEar\settings.json`의 호환되는 설정은 불러옵니다.
 
 ## 휴대폰 연결
 
-1. PC와 휴대폰을 같은 네트워크에 연결합니다. 공용 카페 Wi-Fi가 기기 간 통신을 차단한다면 신뢰할 수 있는 개인 핫스팟이 더 편리할 수 있습니다.
-2. 이어폰이나 Bluetooth 헤드폰을 **휴대폰에 연결**합니다.
-3. AirEar에서 캡처할 윈도우 출력 장치를 선택하고 송출 서버를 시작합니다.
-4. 방화벽 안내가 나오면 신뢰하는 개인 네트워크 범위에 허용합니다.
-5. 휴대폰으로 QR 코드를 스캔하거나 표시된 주소를 브라우저에서 엽니다.
-6. AirEar에 표시된 PIN을 입력하고 **듣기 시작**을 누릅니다. 브라우저 재생 정책 때문에 사용자가 직접 눌러야 합니다.
-7. AirEar의 송출 음량과 휴대폰의 수신 음량을 각각 조절합니다.
+1. PC와 휴대폰을 같은 신뢰할 수 있는 Wi-Fi에 연결합니다.
+2. AirEar에서 Windows 소리 설정의 기본 출력 장치를 선택합니다. **송출 시작**을 눌러 오디오 캡처를 시작하고 Windows 권한 요청이 있으면 허용합니다.
+3. 휴대폰으로 QR을 스캔하거나 화면의 LAN 주소를 엽니다.
+4. 데스크톱 앱의 8자리 PIN을 입력하고 **연결하고 듣기**를 누릅니다.
+5. 듣기 음량은 휴대폰 버튼으로 조절하고, 송출 음량은 AirEar 슬라이더로 조절합니다.
 
-프로그램을 최소화하면 트레이로 이동하고 송출은 계속됩니다. 트레이 아이콘으로 창을 다시 열고, 트레이의 **종료** 메뉴로 서버를 멈추고 프로그램을 끝낼 수 있습니다.
+PC 스피커에서 소리를 내지 않으려면 [VB-Audio 공식 사이트](https://vb-audio.com/Cable/)에서 VB-CABLE을 직접 설치한 뒤 Windows 기본 출력 장치로 설정하세요. AirEar는 오디오 드라이버를 동의 없이 다운로드하거나 설치하지 않습니다. 자세한 내용은 [설치 안내](docs/INSTALL.md)를 참고하세요.
 
-### PC 스피커 소리를 끄고 듣기
+## 현재 오디오 캡처 범위
 
-AirEar의 설치 도우미 또는 [VB-CABLE 공식 사이트](https://vb-audio.com/Cable/)에서 가상 오디오 드라이버를 설치합니다. **윈도우 설정 → 시스템 → 소리 → 출력**에서 **CABLE Input (VB-Audio Virtual Cable)** 을 선택하고 AirEar에서는 해당 장치의 루프백을 선택합니다.
+Electron 구현은 Windows의 현재 시스템 오디오 믹스를 루프백 캡처합니다. 송출 전에 Windows에서 사용할 재생 장치를 선택하세요. 현재 Electron 캡처 API는 이전 앱의 WASAPI 장치별 선택 기능을 제공하지 않으므로, AirEar 내부의 임의 출력 장치 선택이나 장치 변경 자동 복구가 된다고 안내하지 않습니다. 해당 기능을 다시 제공하려면 Windows용 WASAPI 네이티브 모듈이 필요합니다.
 
-재생 앱이 자체 출력 설정을 사용한다면 그 앱도 CABLE Input으로 지정합니다. 윈도우의 **이 장치로 듣기**는 끕니다. 물리 스피커 대신 가상 장치로 소리를 보내므로 윈도우 마스터 음소거에 의존하지 않습니다.
+휴대폰에서는 사용자가 시작 동작을 한 뒤 HTML 오디오 플레이어로 재생합니다. 화면 잠금 상태의 재생은 휴대폰 운영체제와 브라우저에 따라 달라 보장되지 않습니다. 실제 Windows 장치에서 캡처와 장시간 재생을 검증해야 합니다.
 
-일반 스피커 루프백을 선택하면 PC와 휴대폰 양쪽에서 소리가 들리는 것이 정상입니다.
+## 다국어
 
-## 언어 파일
+한국어·영어·일본어 JSON 파일은 `%LOCALAPPDATA%\AirEar\languages`에 생성됩니다. JSON 값을 수정하면 데스크톱 화면은 자동으로 다시 읽고, 휴대폰 화면도 열려 있는 동안 선택한 언어 파일을 주기적으로 다시 읽습니다. 언어를 추가하는 방법은 [docs/LANGUAGES.md](docs/LANGUAGES.md)를 확인하세요.
 
-한국어와 영어를 기본 제공합니다. AirEar 설정에서 언어를 선택하면 화면이 바로 바뀝니다. 번역 문구는 별도 JSON 파일로 관리하므로 Python이나 JavaScript 소스를 바꾸지 않고 번역을 유지할 수 있습니다.
+## 개발
 
-`%LOCALAPPDATA%\AirEar\languages` 폴더에 언어 파일을 추가하거나 기본 번역을 덮어쓸 수 있습니다. 실행 중 저장한 변경 내용도 다시 읽습니다. JSON 형식, 치환 변수와 새 언어 추가 방법은 [언어 파일 안내](docs/LANGUAGES.md)를 참고하세요.
+- 화면: HTML/CSS
+- 화면 동작·시그널링·WebRTC·설정·번역: JavaScript
+- 데스크톱 실행 및 Windows 시스템 루프백 오디오: Electron 45 + Node.js 24
+- LAN 시그널링 및 휴대폰 화면: Express + WebSocket
+- Windows x64 설치본: `electron-builder` + NSIS
+- 자동 빌드: GitHub Actions 정적 검사, 테스트, Windows 설치·실행 스모크 검사, SHA256 생성
 
-## 주요 기능
-
-- 기본·선택 WASAPI 출력 장치 캡처, 장치 오류 복구, 무음 중에도 스트림 유지
-- Opus/WebRTC 오디오, 최대 수신기 4대, 휴대폰별 음량, 한정된 오디오 버퍼
-- QR 주소, PIN 인증, 세션 만료, 데스크톱에서 수신기 관리
-- 독립 송출 음량 0~200%, 음소거, 피크 리미터, 입력 레벨 미터
-- 밝게·어둡게·시스템 테마, 스크롤 화면, 트레이 동작, 실시간 언어 파일
-- 동의 기반 공식 VB-CABLE 설치 도우미, AppData 설정·로그, GitHub 정식 릴리스 업데이트 확인
-
-## 네트워크와 재생 안내
-
-신뢰할 수 있는 로컬 네트워크에서 사용하세요. 기본 HTTP에서는 PIN과 시그널링 인증정보가 암호화되지 않습니다. 평소 사용에는 휴대폰이 신뢰하는 인증서로 HTTPS를 설정하는 것이 좋습니다. 인터넷 공개나 공유기 포트포워딩 용도로 사용하지 마세요. [HTTPS·보안 안내](docs/SECURITY.md).
-
-휴대폰 화면 잠금, 백그라운드 탭, 절전 설정, 브라우저 정책에 따라 재생이 멈출 수 있습니다. 필요하면 수신 화면으로 돌아와 듣기 시작을 다시 누르세요. 실제 지연과 장시간 재생은 기기·네트워크에 따라 달라지며 고정된 지연시간을 보장하지 않습니다.
-
-## 빌드와 검증
-
-최초 Windows Actions 빌드는 테스트, PyInstaller 단일 EXE 생성, AMD64 PE 확인, 배포 EXE 기본 실행 검사, 체크섬 생성을 통과했습니다. 이 결과는 패키징 확인이며 실제 윈도우 오디오·휴대폰 재생 확인을 대신하지 않습니다. 현재 수락 상태는 [PR #1](https://github.com/mycodehive/airear/pull/1)과 [검증 기록](docs/VALIDATION.md)을 참고하세요.
-
-개발에는 [uv](https://docs.astral.sh/uv/)를 설치한 뒤 다음을 실행합니다.
-
-```powershell
-uv sync --locked --extra dev --python 3.12.14
-uv run --locked --extra dev python -m airear
-./scripts/build.ps1
+```sh
+npm ci
+npm run lint
+npm test
+npm start
 ```
 
-의존성과 해시는 `uv.lock`에 고정돼 있습니다. EXE에는 Python 런타임이 포함되며 VB-CABLE 드라이버는 별도로 설치합니다. 버전 릴리스 커밋과 태그는 Windows CI에서 게시하며 사전 배포 접미사가 있는 버전은 시험판으로 게시하고, 자동 업데이트는 GitHub 정식 릴리스를 사용합니다.
+Windows 설치 프로그램은 Windows에서 `npm run dist:win`으로 빌드합니다. [개발 안내](docs/DEVELOPMENT.md)와 [릴리스 안내](docs/RELEASING.md)를 참고하세요.
 
-[상세 설치 안내](docs/INSTALL.md) · [문제 해결](docs/TROUBLESHOOTING.md) · [릴리스 절차](docs/RELEASING.md)
+## 네트워크 및 개인정보
 
-### v1.0.1 재생 개선
+서버는 로컬 네트워크 인터페이스에 바인딩하고 사설 IPv4 LAN 클라이언트만 허용합니다. PIN 입력은 횟수 제한이 적용됩니다. HTTP 시그널링은 암호화되지 않으므로 신뢰할 수 있는 개인 네트워크에서만 사용하고 인터넷에 포트를 공개하지 마세요. WebRTC 미디어는 DTLS-SRTP로 암호화되지만 별도 HTTP 시그널링까지 암호화되는 것은 아닙니다.
 
-휴대폰은 구버전 v1.3과 같은 기본 HTML 오디오 플레이어로 재생합니다. 수신 음량은 휴대폰 음량 버튼으로 조절하세요. 페이지가 백그라운드로 전환됐다는 이유만으로 연결을 종료하지 않으며, 기존 서버의 끊김 개선을 유지합니다. 화면 잠금 재생은 기기·브라우저의 영향을 받으므로 해당 휴대폰에서 확인이 필요합니다.
+## 코드 서명
+
+현재 앱은 코드 서명 인증서 없이 배포됩니다. Windows SmartScreen 경고가 나타날 수 있습니다. 설치 전 소스와 릴리스에 첨부된 SHA256 체크섬을 확인하세요.

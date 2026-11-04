@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#edf4ff">
+  <title>AirEar</title>
+  <link rel="stylesheet" href="phone.css">
+</head>
+<body>
+  <main class="app">
+    <header><div class="logo">◉</div><div><b>AirEar</b><small data-i18n="brand.tagline">Windows audio to your phone</small></div><select id="language" aria-label="Language"><option value="ko">KO</option><option value="en">EN</option><option value="ja">JA</option></select></header>
+    <section class="hero"><span class="kicker" data-i18n="phone.kicker">PRIVATE WI-FI AUDIO</span><h1 data-i18n="phone.hero">Listen comfortably from your phone.</h1><p data-i18n="phone.intro">Enter the access PIN shown in the AirEar desktop app.</p></section>
+    <section class="card">
+      <label for="pin" data-i18n="phone.pin">Access PIN</label>
+      <input id="pin" type="password" inputmode="numeric" autocomplete="one-time-code" maxlength="8" pattern="[0-9]{8}" placeholder="8 digits">
+      <button id="connect" class="primary" data-i18n="phone.listen">Connect and listen</button>
+      <button id="disconnect" class="secondary" disabled data-i18n="phone.disconnect">Disconnect</button>
+      <div id="status" class="status" role="status" aria-live="polite" data-i18n="phone.waiting">Waiting to connect</div>
+      <audio id="audio" controls autoplay playsinline></audio>
+      <p class="volume" data-i18n="phone.volume">Use your phone's volume buttons to adjust listening volume.</p>
+    </section>
+    <section class="tips"><h2 data-i18n="phone.earphonesTitle">One pair of earphones, less switching</h2><p data-i18n="phone.earphones">Connect your earphones to this phone. Your PC audio will arrive here over the same Wi-Fi.</p><p data-i18n="phone.airpods">AirPods or other Bluetooth earphones paired with your phone work as usual.</p><p class="caution" data-i18n="phone.background">Playback while the phone is locked or the browser is in the background depends on iOS/Android and browser power policies.</p></section>
+    <footer data-i18n="footer.lan">Private LAN streaming</footer>
+  </main>
+  <script src="phone.js"></script>
+</body>
+</html>

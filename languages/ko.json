@@ -1,0 +1,126 @@
+{
+  "brand": {
+    "tagline": "휴대폰으로 듣는 PC 오디오",
+    "eyebrow": "개인 LAN 오디오"
+  },
+  "nav": {
+    "dashboard": "대시보드",
+    "connection": "휴대폰 연결",
+    "settings": "설정",
+    "diagnostics": "로그 및 진단"
+  },
+  "title": "PC 사운드를 휴대폰에서 들으세요",
+  "status": {
+    "stopped": "서버 중지",
+    "running": "서버 실행 중"
+  },
+  "hero": {
+    "badge": "이어폰은 휴대폰에 한 번만 연결",
+    "title": "이어폰을 휴대폰에 그대로 두세요.",
+    "body": "카페나 도서관 등 가까운 곳에서 같은 Wi-Fi로 PC 오디오를 휴대폰에 전송하세요. 이어폰을 PC와 휴대폰 사이에서 바꿔 연결할 필요가 없습니다.",
+    "captureNote": "현재 Windows 시스템 오디오 믹스를 캡처합니다. 방송을 시작하기 전에 Windows 소리 설정에서 사용할 출력 장치를 선택하세요."
+  },
+  "button": {
+    "startBroadcast": "송출 시작",
+    "stopBroadcast": "송출 중지",
+    "startServer": "서버 시작",
+    "stopServer": "서버 중지",
+    "copy": "복사",
+    "disconnect": "연결 해제",
+    "openLog": "로그 파일 열기",
+    "copyDiagnostics": "진단 정보 복사",
+    "checkUpdates": "업데이트 확인"
+  },
+  "server": {
+    "title": "LAN 서버",
+    "description": "같은 Wi-Fi에 연결된 휴대폰이 접속할 수 있도록 로컬 서비스를 시작합니다.",
+    "port": "포트",
+    "autoStart": "AirEar 실행 시 LAN 서버 자동 시작"
+  },
+  "audio": {
+    "title": "오디오 송출",
+    "idle": "송출 안 함",
+    "live": "송출 중",
+    "description": "Electron이 Windows 시스템 오디오 루프백을 캡처해 연결된 휴대폰으로 전송합니다.",
+    "volume": "송출 음량",
+    "mute": "음소거",
+    "cable": "PC 스피커를 조용히 하려면 VB-CABLE을 Windows 기본 출력 장치로 설정하세요."
+  },
+  "phone": {
+    "title": "휴대폰 연결",
+    "receivers": "대 연결",
+    "description": "같은 Wi-Fi에 연결된 휴대폰에서 주소를 열고 PIN을 입력한 다음 듣기를 누르세요.",
+    "lanAddress": "PC LAN 주소",
+    "waiting": "서버를 시작하면 접속 주소가 표시됩니다.",
+    "noAddress": "사용 가능한 사설 LAN 주소가 없습니다. Wi-Fi 연결을 확인하세요.",
+    "pin": "접속 PIN",
+    "qrHint": "QR에는 주소만 포함됩니다. PIN은 별도로 입력하세요.",
+    "receiver": "수신기",
+    "connectHelp": "PC와 휴대폰을 같은 개인 Wi-Fi에 연결하고 QR을 스캔하세요. PIN을 입력한 뒤 휴대폰 브라우저에서 듣기를 누르세요.",
+    "kicker": "개인 Wi-Fi 오디오",
+    "hero": "휴대폰에서 편하게 들으세요.",
+    "intro": "AirEar 데스크톱 앱에 표시된 접속 PIN을 입력하세요.",
+    "listen": "연결하고 듣기",
+    "disconnect": "연결 해제",
+    "pinInvalid": "8자리 PIN을 입력하세요.",
+    "connecting": "연결 중…",
+    "reconnecting": "네트워크를 다시 연결하는 중…",
+    "networkError": "네트워크 연결을 확인하세요.",
+    "pinIncorrect": "PIN이 올바르지 않습니다.",
+    "capacity": "연결 가능한 수신기 수를 초과했습니다.",
+    "notStreaming": "PC에서 오디오 송출을 시작하세요.",
+    "waitingAudio": "PC의 오디오를 기다리는 중…",
+    "connectionFailed": "오디오 연결에 실패했습니다. 다시 연결해 주세요.",
+    "tapPlay": "재생 버튼을 눌러 오디오를 시작하세요.",
+    "networkInterrupted": "연결이 끊겼습니다. 자동으로 다시 연결합니다.",
+    "disconnected": "연결이 해제되었습니다.",
+    "negotiating": "오디오 연결을 설정하는 중…",
+    "connected": "연결됨 · 오디오를 재생하고 있습니다.",
+    "volume": "휴대폰의 음량 버튼으로 듣기 음량을 조절하세요.",
+    "earphonesTitle": "이어폰 하나로 기기 전환 줄이기",
+    "earphones": "이어폰을 휴대폰에 연결하세요. PC의 소리가 같은 Wi-Fi를 통해 휴대폰으로 전달됩니다.",
+    "airpods": "AirPods 또는 다른 Bluetooth 이어폰도 휴대폰에 연결해 평소처럼 사용할 수 있습니다.",
+    "background": "화면 잠금 또는 브라우저 백그라운드 재생은 iOS/Android 및 브라우저의 전원 관리 정책에 따라 제한될 수 있습니다.",
+    "removed": "데스크톱 앱에서 연결이 해제되었습니다. 다시 연결하려면 버튼을 누르세요."
+  },
+  "clients": {
+    "title": "연결된 휴대폰",
+    "empty": "연결된 휴대폰이 없습니다.",
+    "connected": "연결됨"
+  },
+  "security": {
+    "notice": "개인 LAN 전용입니다. HTTP 시그널링은 암호화되지 않습니다. 신뢰할 수 있는 Wi-Fi에서 사용하고 인터넷 포트 포워딩을 설정하지 마세요."
+  },
+  "settings": {
+    "title": "프로그램 설정",
+    "theme": "테마",
+    "system": "시스템 설정 사용",
+    "light": "밝게",
+    "dark": "어둡게",
+    "updates": "업데이트 확인",
+    "updateNow": "업데이트 상태",
+    "firstUpdate": "첫 Electron 버전은 Windows 설치 프로그램으로 설치합니다. 기존 Python EXE 사용자는 새 설치 프로그램을 한 번 실행해야 합니다."
+  },
+  "diagnostics": {
+    "title": "로그 및 진단",
+    "description": "로그는 Windows 사용자 폴더에 저장됩니다. PIN과 세션 토큰은 로그에 기록하지 않습니다."
+  },
+  "footer": {
+    "lan": "개인 LAN 오디오 송출",
+    "screen": "휴대폰 화면이 꺼진 상태의 재생은 브라우저와 운영체제 동작에 따라 달라집니다."
+  },
+  "error": {
+    "serverStart": "서버를 시작하지 못했습니다.",
+    "serverStop": "서버를 중지하지 못했습니다.",
+    "noAudioTrack": "시스템 오디오 트랙을 찾지 못했습니다.",
+    "capture": "시스템 오디오 캡처를 시작하지 못했습니다.",
+    "signaling": "시그널링 서버에 연결하지 못했습니다."
+  },
+  "update": {
+    "available": "업데이트 있음",
+    "downloading": "다운로드 중",
+    "downloaded": "업데이트 설치",
+    "install": "지금 다시 시작해 설치",
+    "none": "최신 버전입니다."
+  }
+}

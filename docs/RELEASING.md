@@ -1,14 +1,21 @@
-# Release process
+# Releasing
 
-Stable release publication is explicitly authorized by the maintainer. Version numbers must match pyproject.toml, src/airear/__init__.py, GUI/diagnostics labels and scripts/version_info.txt; regenerate uv.lock when changing the project version.
+The Windows workflow runs on pull requests and feature pushes. It runs syntax checks, Node tests, builds an NSIS x64 installer, installs it silently on the Windows runner, verifies the installed executable is x64 PE, runs the app's smoke mode, and uploads the installer plus `latest.yml`, blockmap, and SHA256 checksums.
 
-- Push a tag such as v1.0.0, or push a main commit with the first line `release: v1.0.0`.
-- Windows CI runs lint, tests, onefile packaging, AMD64 PE checks, frozen smoke execution and checksum generation.
-- Only after the build succeeds, the release job uploads AirEar.exe, SHA256SUMS.txt and release notes. A release commit creates the tag at the exact built commit.
-- Versions containing a suffix such as -rc.1 publish as prereleases; ordinary versions publish as stable/latest.
-- Existing published versions are skipped to avoid silently replacing assets. Publish fixes under a new version.
-- Ordinary main commits build artifacts without publishing a release.
+To publish a stable version:
 
-Record actual device observations separately from automation in VALIDATION.md. Stable publication does not turn unperformed hardware checks into verified tests. The first v1.0.0 stable release was authorized after user playback feedback; complete endurance and compatibility testing remains pending.
+1. Update `package.json` version and regenerate `package-lock.json` with `npm install --package-lock-only`.
+2. Update `docs/RELEASE_NOTES.md` with user-visible changes and known limitations.
+3. Merge the change. A `vX.Y.Z` tag or a `main` commit whose first line is `release: vX.Y.Z` triggers the release job.
+4. The job requires the version in the tag/commit message to match `package.json`. It publishes the NSIS setup, `latest.yml`, blockmap, and SHA256 file to a non-draft GitHub Release.
 
-The application updater reads GitHub stable/latest releases and checks the EXE against SHA256SUMS.txt before replacement. Keep the same AirEar.exe asset name across versions.
+The application checks GitHub Releases at startup and every four hours. It asks before downloading, shows download progress, verifies the update using the signed release metadata's package hash over HTTPS, and offers restart/install when complete. The Windows installer is currently unsigned; SmartScreen warnings are expected. Because no code-signing certificate is configured, Authenticode verification is explicitly disabled in electron-builder; release hashes and GitHub's HTTPS release channel are used instead.
+
+The Python v1.x and Electron v2.x installers are different products for update purposes. Existing Python users must install the first Electron version once manually. Keep the app ID and `%LOCALAPPDATA%\AirEar` path stable so user settings remain available.
+
+## Release verification checklist
+
+- Confirm Windows Actions build, automated tests, install smoke, and artifacts all pass.
+- Confirm the release is public, not a draft or prerelease, and includes setup, `latest.yml`, blockmap, and checksums.
+- Confirm the installer is a Windows x64 installer and the installed `AirEar.exe` is PE32+ AMD64.
+- Run the capture checklist in `VALIDATION.md` on physical Windows and phone hardware before claiming end-to-end support.

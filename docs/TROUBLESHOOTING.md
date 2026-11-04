@@ -1,26 +1,32 @@
-# 문제 해결
+# Troubleshooting
 
-| 증상 | 확인·조치 |
-|---|---|
-| 휴대폰에서 접속 안 됨 | 같은 LAN, 정확한 PC IPv4, 개인 방화벽 포트 허용, AP isolation/게스트 Wi-Fi/VPN 여부 확인 |
-| 여러 주소가 보임 | 실제 Wi-Fi/Ethernet 주소를 선택. VPN/가상 어댑터 주소 제외 |
-| PIN 인증 실패 | 표시된 새 PIN 사용. 재생성 시 기존 연결 해제. 시도 제한은 1분 뒤 재시도 |
-| HTTPS 오류 | IP SAN 일치/만료/휴대폰 CA 신뢰 확인. 단순 경고 우회 대신 인증서 수정 |
-| 연결은 됐지만 무음 | 앱 실제 재생 장치와 선택 loopback 일치, 송출 mute/gain·휴대폰 음량 확인. 필요 시 Windows 기본 출력 CABLE Input 지정 |
-| PC에서도 소리가 남 | 물리 스피커 대신 CABLE Input으로 앱/시스템 출력 지정, Windows ‘이 장치로 듣기’ 해제 |
-| 가상 장치 미감지 | 공식 설치 프로그램 완료·재부팅 후 새로고침. 장치 감지가 설치 결과 확인 기준 |
-| VB-CABLE 설치 자동 실행 중단 | 공식 링크/ZIP/서명 검사 실패 시 안전하게 중단. https://vb-audio.com/Cable/ 공식 설치를 직접 진행 |
-| 화면 잠금 후 정지 | iOS 정책 제한. Safari로 돌아와 듣기 시작. 백그라운드 재생 유지 보장 없음 |
-| 200% 음량 효과가 적음 | peak limiter가 이미 큰 신호의 클리핑을 방지. 휴대폰 물리 볼륨도 확인 |
-| 장치 제거 후 무음 | 캡처 재시도 중에는 무음 프레임 유지. 재연결 후 새로고침/재선택. Windows endpoint가 바뀌면 재선택 |
-| 업데이트 오류 | 정식 Release 유무/GitHub API 제한/인터넷 확인. 현재 실행은 계속 가능. 실패 시 기존 EXE 수동 재실행 |
-| 설정 손상 | 기본값으로 복구됨. AppData settings.json을 백업 후 재설정 |
-| EXE 실행 실패 | Windows x64 확인, 보안제품 격리 기록 확인, `%LOCALAPPDATA%\AirEar\airear.log` 확인 |
+## The phone cannot open the address
 
-지연은 측정 전 숫자로 보장하지 않습니다. 30분 시험은 실제 Windows 재생과 휴대폰 수신으로 수행하고 장치/iOS/Wi-Fi/RSSI/수신기 수/평균·최대 지연/끊김 횟수를 기록하세요. 소스와 수신 출력을 동시에 녹음해 파형 시간 차이를 비교하면 지연을 측정할 수 있습니다.
+- Check that the PC and phone use the same Wi-Fi and are not on guest Wi-Fi with client isolation.
+- Use the private LAN address displayed by AirEar. A VPN or multiple adapters can change which LAN is reachable.
+- Allow AirEar on the Windows Private network firewall profile. Keep the port closed to public networks.
+- Confirm the LAN server is running and the selected port is not already in use.
 
-## 소리가 뚝뚝 끊길 때
+## The PIN is rejected
 
-가능하면 PC는 유선 LAN, 휴대폰은 신호가 강한 Wi-Fi에 연결해 비교하세요. 먼저 수신기 한 대와 송출 음량100%로 시험하고 화면을 켠 상태로 확인하세요. Bluetooth 이어폰을 잠시 분리하고 휴대폰 스피커에서도 같은 증상인지 비교하면 무선 네트워크와 이어폰 경로를 구분하는 데 도움이 됩니다.
+Enter the current 8-digit PIN shown in the desktop app. Stop and restart the LAN server to generate a new PIN. PIN attempts are rate limited.
 
-현재 오디오 경로는 작은 캡처 지연을 흡수하기 위해60ms를 미리 채우고, 각 캡처·송출 단계의 대기 버퍼를200ms 이내로 제한합니다. 이 값은 내부 버퍼 목표이며 실제 종단간 지연 측정값이 아닙니다. ‘진단 복사’의 audio_buffer에서 underruns(언더런), dropped_packets/dropped_samples(과적체 폐기), callback_warnings(캡처 경고)를 확인할 수 있습니다. 실제 Windows·휴대폰에서의 개선 정도는 사용 환경에서 확인해야 합니다.
+## No audio reaches the phone
+
+- Start broadcasting from the desktop app after starting the LAN server.
+- Select the expected Windows playback device as the Windows default output before starting capture.
+- Check the desktop audio level meter and make sure stream mute is off.
+- In the phone browser, tap Connect and listen, then tap the native audio player's Play button if requested.
+- Some apps use protected audio that Windows loopback may not capture.
+
+## Keep PC speakers quiet
+
+Set the VB-CABLE virtual playback device as Windows default output. Driver setup is manual from the official VB-Audio site; Windows may require administrator approval and a reboot. A failed or skipped driver installation does not prevent testing with a normal output device.
+
+## Audio pauses when the phone is locked
+
+Background and lock-screen playback are controlled by the phone OS and browser. Return to the browser and tap Play again. AirEar does not promise uninterrupted screen-off playback on every device.
+
+## Updates
+
+Python v1.x cannot be replaced by the Electron updater. Install the Electron NSIS setup once. Later Electron updates download through the app after you choose the update action. If update installation fails, download the latest setup from GitHub Releases and run it over the existing per-user installation.

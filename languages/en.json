@@ -1,0 +1,126 @@
+{
+  "brand": {
+    "tagline": "PC audio on your phone",
+    "eyebrow": "PRIVATE LAN AUDIO"
+  },
+  "nav": {
+    "dashboard": "Overview",
+    "connection": "Phone connection",
+    "settings": "Settings",
+    "diagnostics": "Logs & diagnostics"
+  },
+  "title": "Listen to your PC on your phone",
+  "status": {
+    "stopped": "Server stopped",
+    "running": "Server running"
+  },
+  "hero": {
+    "badge": "One pair of earphones",
+    "title": "Keep your earphones on your phone.",
+    "body": "Stream PC audio over your private Wi-Fi at a café, library, or nearby. No need to switch your earphones between your PC and phone.",
+    "captureNote": "Captures the current Windows system audio mix. Choose the desired playback device in Windows Sound settings before broadcasting."
+  },
+  "button": {
+    "startBroadcast": "Start broadcasting",
+    "stopBroadcast": "Stop broadcasting",
+    "startServer": "Start server",
+    "stopServer": "Stop server",
+    "copy": "Copy",
+    "disconnect": "Disconnect",
+    "openLog": "Open log file",
+    "copyDiagnostics": "Copy diagnostics",
+    "checkUpdates": "Check for updates"
+  },
+  "server": {
+    "title": "LAN server",
+    "description": "Start the local service so phones on the same Wi-Fi can connect.",
+    "port": "Port",
+    "autoStart": "Start the LAN server when AirEar opens"
+  },
+  "audio": {
+    "title": "Broadcast audio",
+    "idle": "Not broadcasting",
+    "live": "Broadcasting",
+    "description": "Electron captures the Windows system audio loopback and sends it to connected phones.",
+    "volume": "Stream volume",
+    "mute": "Mute",
+    "cable": "To keep PC speakers silent, set VB-CABLE as the Windows default output device."
+  },
+  "phone": {
+    "title": "Connect a phone",
+    "receivers": "receivers",
+    "description": "Open this address on a phone connected to the same Wi-Fi, enter the PIN, and tap Listen.",
+    "lanAddress": "PC LAN address",
+    "waiting": "Start the server to display the connection URL.",
+    "noAddress": "No private LAN address is available. Check your Wi-Fi connection.",
+    "pin": "Access PIN",
+    "qrHint": "The QR contains the address only. Enter the PIN separately.",
+    "receiver": "Receiver",
+    "connectHelp": "Connect both devices to the same private Wi-Fi and scan the QR code. Enter the PIN, then tap Listen in your phone browser.",
+    "kicker": "PRIVATE WI-FI AUDIO",
+    "hero": "Listen comfortably from your phone.",
+    "intro": "Enter the access PIN shown in the AirEar desktop app.",
+    "listen": "Connect and listen",
+    "disconnect": "Disconnect",
+    "pinInvalid": "Enter the 8-digit PIN.",
+    "connecting": "Connecting…",
+    "reconnecting": "Reconnecting to the network…",
+    "networkError": "Check your network connection.",
+    "pinIncorrect": "The PIN is incorrect.",
+    "capacity": "The maximum number of receivers is connected.",
+    "notStreaming": "Start audio broadcasting on the PC first.",
+    "waitingAudio": "Waiting for PC audio…",
+    "connectionFailed": "The audio connection failed. Please reconnect.",
+    "tapPlay": "Tap Play to start the audio.",
+    "networkInterrupted": "Connection interrupted. Reconnecting automatically.",
+    "disconnected": "Disconnected.",
+    "negotiating": "Setting up the audio connection…",
+    "connected": "Connected · Playing audio.",
+    "volume": "Use your phone volume buttons to adjust listening volume.",
+    "earphonesTitle": "One pair of earphones, less switching",
+    "earphones": "Connect your earphones to this phone. PC audio arrives over the same Wi-Fi.",
+    "airpods": "AirPods or other Bluetooth earphones paired with your phone work as usual.",
+    "background": "Playback while locked or in the background may be limited by iOS/Android and browser power policies.",
+    "removed": "The desktop app disconnected this receiver. Tap Connect to reconnect."
+  },
+  "clients": {
+    "title": "Connected phones",
+    "empty": "No phones connected",
+    "connected": "Connected"
+  },
+  "security": {
+    "notice": "Private LAN only. HTTP signalling is not encrypted. Use a trusted Wi-Fi network and do not forward this port to the internet."
+  },
+  "settings": {
+    "title": "Application settings",
+    "theme": "Theme",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark",
+    "updates": "Check for updates",
+    "updateNow": "Update status",
+    "firstUpdate": "The first Electron release uses a Windows setup program. Existing Python EXE users must run the new installer once."
+  },
+  "diagnostics": {
+    "title": "Logs & diagnostics",
+    "description": "Logs are stored in your Windows user profile. PINs and session tokens are not written to them."
+  },
+  "footer": {
+    "lan": "Private LAN audio streaming",
+    "screen": "Playback while the phone is locked depends on browser and operating system behavior."
+  },
+  "error": {
+    "serverStart": "Could not start the server.",
+    "serverStop": "Could not stop the server.",
+    "noAudioTrack": "No system audio track was found.",
+    "capture": "Could not start system audio capture.",
+    "signaling": "Could not connect to the signalling service."
+  },
+  "update": {
+    "available": "Update available",
+    "downloading": "Downloading",
+    "downloaded": "Update ready",
+    "install": "Restart to install",
+    "none": "You are up to date."
+  }
+}

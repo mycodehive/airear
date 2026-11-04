@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' ws://127.0.0.1:* http://127.0.0.1:*; media-src 'self' blob:;">
+  <title>AirEar</title>
+  <link rel="stylesheet" href="desktop.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand"><img src="../../src/airear/assets/airear.png" alt=""><div><strong>AirEar</strong><small data-i18n="brand.tagline">Windows audio to your phone</small></div></div>
+      <nav><button class="nav-item active" data-target="dashboard" data-i18n="nav.dashboard">Overview</button><button class="nav-item" data-target="connection" data-i18n="nav.connection">Phone connection</button><button class="nav-item" data-target="settings" data-i18n="nav.settings">Settings</button><button class="nav-item" data-target="diagnostics" data-i18n="nav.diagnostics">Logs & diagnostics</button></nav>
+      <div class="sidebar-bottom"><span class="status-dot" id="sidebarDot"></span><span id="sidebarStatus" data-i18n="status.stopped">Server stopped</span><span class="version" id="version">v2.0.0</span></div>
+    </aside>
+
+    <main class="content">
+      <header class="topbar"><div><p class="eyebrow" data-i18n="brand.eyebrow">PRIVATE LAN AUDIO</p><h1 data-i18n="title">Listen to your PC on your phone</h1></div><div class="top-actions"><select id="language" aria-label="Language"><option value="ko">한국어</option><option value="en">English</option><option value="ja">日本語</option></select><span class="pill"><i id="serverDot"></i><span id="serverState" data-i18n="status.stopped">Server stopped</span></span><button id="settingsButton" class="icon-button" aria-label="Settings">⚙</button></div></header>
+
+      <section id="dashboard" class="view active">
+        <div class="hero card"><div class="hero-copy"><span class="badge" data-i18n="hero.badge">One pair of earphones</span><h2 data-i18n="hero.title">Keep your earphones on your phone.</h2><p data-i18n="hero.body">Stream PC audio over your private Wi-Fi, so you can listen in a café, library, or anywhere nearby without switching your earphones between devices.</p><div class="hero-actions"><button id="broadcastButton" class="primary">▶ <span data-i18n="button.startBroadcast">Start broadcasting</span></button><button id="stopBroadcastButton" class="secondary" disabled><span data-i18n="button.stopBroadcast">Stop broadcasting</span></button></div><p class="hint" data-i18n="hero.captureNote">Captures the current Windows system audio mix. Choose the desired playback device in Windows Sound settings before broadcasting.</p></div><div class="hero-art"><div class="glow"></div><div class="device pc">▣<small>PC</small></div><div class="wave">)))</div><div class="device phone">♫<small>PHONE</small></div></div></div>
+
+        <div class="grid two">
+          <article class="card"><div class="card-heading"><div><span class="step">01</span><h3 data-i18n="server.title">LAN server</h3></div><span id="serverBadge" class="badge muted" data-i18n="status.stopped">Stopped</span></div><p data-i18n="server.description">Start the local service so phones on the same Wi-Fi can connect.</p><div class="row"><label for="port" data-i18n="server.port">Port</label><input id="port" type="number" min="1024" max="65535" value="8765"><button id="serverButton" class="secondary"><span data-i18n="button.startServer">Start server</span></button></div><label class="check"><input id="autoStart" type="checkbox"><span data-i18n="server.autoStart">Start the LAN server when AirEar opens</span></label></article>
+          <article class="card"><div class="card-heading"><div><span class="step">02</span><h3 data-i18n="audio.title">Broadcast audio</h3></div><span id="audioBadge" class="badge muted" data-i18n="audio.idle">Not broadcasting</span></div><p data-i18n="audio.description">Electron captures the Windows system audio loopback and sends it to connected phones.</p><div class="meter"><div id="meterFill"></div></div><div class="row volume-row"><label for="gain" data-i18n="audio.volume">Stream volume</label><input id="gain" type="range" min="0" max="200" value="100"><strong id="gainText">100%</strong><label class="check compact"><input id="mute" type="checkbox"><span data-i18n="audio.mute">Mute</span></label></div><p class="hint" data-i18n="audio.cable">To keep PC speakers silent, set VB-CABLE as the Windows default output and use its loopback mix.</p></article>
+        </div>
+
+        <div class="grid two lower-grid">
+          <article class="card connection-card"><div class="card-heading"><div><span class="step">03</span><h3 data-i18n="phone.title">Connect a phone</h3></div><span class="count"><b id="clientCount">0</b> <span data-i18n="phone.receivers">receivers</span></span></div><p data-i18n="phone.description">Open this address on a phone connected to the same Wi-Fi, enter the PIN, and tap Listen.</p><div class="address-row"><label for="lanAddress" data-i18n="phone.lanAddress">PC LAN address</label><input id="lanAddress" type="text" placeholder="192.168.0.45"></div><p class="url" id="phoneUrl">Start the server to display the connection URL.</p><div class="pin-row"><span data-i18n="phone.pin">Access PIN</span><strong id="pinValue">••••••••</strong><button id="copyUrl" class="text-button" data-i18n="button.copy">Copy</button></div><div class="qr-wrap"><img id="qr" alt="Connection QR code"><span data-i18n="phone.qrHint">QR contains the address only. Enter the PIN separately.</span></div></article>
+          <article class="card"><div class="card-heading"><div><span class="step">04</span><h3 data-i18n="clients.title">Connected phones</h3></div></div><div id="clients" class="client-list"><div class="empty" data-i18n="clients.empty">No phones connected</div></div><div class="notice" data-i18n="security.notice">Private LAN only. HTTP signalling is not encrypted; use a trusted Wi-Fi network and do not forward this port to the internet.</div></article>
+        </div>
+      </section>
+
+      <section id="connection" class="view"><article class="card page-card"><span class="step">PHONE</span><h2 data-i18n="phone.title">Connect a phone</h2><p data-i18n="phone.connectHelp">Connect both devices to the same private Wi-Fi, scan the QR code, enter the PIN, then tap Listen in the phone browser.</p><div id="connectionSummary"></div></article></section>
+
+      <section id="settings" class="view"><article class="card page-card"><span class="step">APP</span><h2 data-i18n="settings.title">Application settings</h2><div class="setting-row"><label for="theme" data-i18n="settings.theme">Theme</label><select id="theme"><option value="system" data-i18n="settings.system">System</option><option value="light" data-i18n="settings.light">Light</option><option value="dark" data-i18n="settings.dark">Dark</option></select></div><div class="setting-row"><label for="updates" data-i18n="settings.updates">Check for updates</label><input id="updates" type="checkbox" checked></div><div class="setting-row"><span data-i18n="settings.updateNow">Update status</span><button id="updateButton" class="secondary" data-i18n="button.checkUpdates">Check for updates</button></div><div class="notice" data-i18n="settings.firstUpdate">The first Electron release is installed with a Windows setup program. Existing Python EXE installations require running the new setup program once.</div></article></section>
+
+      <section id="diagnostics" class="view"><article class="card page-card"><span class="step">LOG</span><h2 data-i18n="diagnostics.title">Logs & diagnostics</h2><p data-i18n="diagnostics.description">The log is stored in your Windows user profile. PINs and session tokens are not written to it.</p><div class="row"><button id="openLog" class="secondary" data-i18n="button.openLog">Open log file</button><button id="copyDiagnostics" class="secondary" data-i18n="button.copyDiagnostics">Copy diagnostics</button></div><pre id="diagnosticText"></pre></article></section>
+      <footer><span data-i18n="footer.lan">Private LAN streaming</span><span>·</span><span id="footerVersion">AirEar 2.0.0</span><span>·</span><span data-i18n="footer.screen">Phone screen-off playback depends on browser and OS behavior.</span></footer>
+    </main>
+  </div>
+  <script src="desktop.js"></script>
+</body>
+</html>

@@ -1,42 +1,53 @@
-name: Windows EXE
+name: Windows Electron Installer
+
 on:
   push:
     branches: [main, 'feat/**', 'fix/**']
     tags: ['v*']
   pull_request:
   workflow_dispatch:
+
 permissions:
   contents: read
+
 jobs:
   build:
     runs-on: windows-2022
-    timeout-minutes: 25
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-node@v4
         with:
-          version: '0.13.4'
-          enable-cache: true
-      - name: Build, test, frozen EXE smoke, checksum
-        shell: pwsh
+          node-version: '24.22.2'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Check JavaScript syntax
+        run: npm run lint
+      - name: Run Node.js tests
+        run: npm test
+      - name: Build NSIS installer
+        run: npm run dist:win
         env:
-          QT_QPA_PLATFORM: offscreen
-        run: ./scripts/build.ps1
+          GH_TOKEN: ${{ github.token }}
+      - name: Install and smoke-test x64 application
+        shell: pwsh
+        run: ./scripts/smoke-electron.ps1
       - uses: actions/upload-artifact@v4
         with:
-          name: AirEar-x64
+          name: AirEar-Electron-x64
           path: |
-            dist/AirEar.exe
-            dist/SHA256SUMS.txt
+            dist-electron/AirEar-Setup-*-x64.exe
+            dist-electron/latest.yml
+            dist-electron/*.blockmap
+            dist-electron/SHA256SUMS.txt
           if-no-files-found: error
-      - name: Upload hardware acceptance checklist
-        uses: actions/upload-artifact@v4
-        with:
-          name: validation-checklist
-          path: docs/VALIDATION.md
+          retention-days: 30
+
   release:
     if: >-
-      startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'push' && github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'release: v'))
+      startsWith(github.ref, 'refs/tags/v') ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'release: v'))
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -45,12 +56,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: AirEar-x64
-          path: dist
+          name: AirEar-Electron-x64
+          path: dist-electron
       - name: Publish versioned release
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_MESSAGE: ${{ github.event.head_commit.message }}
+        shell: bash
         run: |
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             VERSION="$GITHUB_REF_NAME"
@@ -58,14 +70,13 @@ jobs:
             VERSION=$(printf '%s\n' "$RELEASE_MESSAGE" | head -n 1 | cut -d ' ' -f 2)
           fi
           [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.-]+)?$ ]] || exit 1
-          PACKAGE_VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
           [[ "${VERSION#v}" == "$PACKAGE_VERSION" ]] || { echo "Version mismatch"; exit 1; }
           if gh release view "$VERSION" >/dev/null 2>&1; then
             echo "Release already exists; published assets are unchanged."
             exit 0
           fi
-          FLAGS=()
-          if [[ "$VERSION" == *-* ]]; then FLAGS+=(--prerelease); else FLAGS+=(--latest); fi
-          gh release create "$VERSION" dist/AirEar.exe dist/SHA256SUMS.txt \
+          gh release create "$VERSION" dist-electron/AirEar-Setup-*-x64.exe \
+            dist-electron/latest.yml dist-electron/*.blockmap dist-electron/SHA256SUMS.txt \
             --target "$GITHUB_SHA" --title "AirEar $VERSION" \
-            --notes-file docs/RELEASE_NOTES.md "${FLAGS[@]}"
+            --notes-file docs/RELEASE_NOTES.md --latest
