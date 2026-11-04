@@ -71,8 +71,9 @@ async function receive(message) {
     if (message.code === 'incorrect-pin') setStatus('phone.pinIncorrect', 'error');
     else if (message.code === 'capacity') setStatus('phone.capacity', 'error');
     else if (message.code === 'not-streaming') setStatus('phone.notStreaming', 'error');
+    else if (message.code === 'receiver-removed') setStatus('phone.removed', 'error');
     else setStatus('phone.networkError', 'error');
-    if (['incorrect-pin', 'capacity'].includes(message.code)) {
+    if (['incorrect-pin', 'capacity', 'receiver-removed'].includes(message.code)) {
       userDisconnected = true;
       $('#connect').disabled = false;
       $('#disconnect').disabled = true;

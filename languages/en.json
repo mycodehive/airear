@@ -80,7 +80,8 @@
     "earphonesTitle": "One pair of earphones, less switching",
     "earphones": "Connect your earphones to this phone. PC audio arrives over the same Wi-Fi.",
     "airpods": "AirPods or other Bluetooth earphones paired with your phone work as usual.",
-    "background": "Playback while locked or in the background may be limited by iOS/Android and browser power policies."
+    "background": "Playback while locked or in the background may be limited by iOS/Android and browser power policies.",
+    "removed": "The desktop app disconnected this receiver. Tap Connect to reconnect."
   },
   "clients": {
     "title": "Connected phones",

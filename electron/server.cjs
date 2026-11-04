@@ -179,7 +179,7 @@ class AirEarServer {
       const phone = this.peers.get(message.peerId);
       if (phone?.ws.readyState === WebSocket.OPEN) this._send(phone.ws, { type: 'state', state: String(message.state || '') });
     } else if (message.type === 'close-peer') {
-      this._removePeer(message.peerId, 'stream-ended');
+      this._removePeer(message.peerId, 'receiver-removed');
     }
   }
 
@@ -199,7 +199,10 @@ class AirEarServer {
     const client = this.peers.get(peerId);
     if (!client) return;
     this.peers.delete(peerId);
-    if (closeSocket && client.ws.readyState === WebSocket.OPEN) this._close(client.ws, 1000, reason);
+    if (closeSocket && client.ws.readyState === WebSocket.OPEN) {
+      if (reason === 'receiver-removed') this._send(client.ws, { type: 'error', code: reason });
+      this._close(client.ws, 1000, reason);
+    }
     if (this.desktop?.ws.readyState === WebSocket.OPEN) this._send(this.desktop.ws, { type: 'close-peer', peerId, reason });
     this.onChange(this.snapshot());
   }
