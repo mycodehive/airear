@@ -15,6 +15,7 @@ let meterFrame = 0;
 const peers = new Map();
 let updateState = { state: 'idle' };
 let languageCheck = null;
+let qrGeneration = 0;
 
 function getString(key) {
   return key.split('.').reduce((value, part) => value && value[part], strings) || key;
@@ -63,25 +64,46 @@ function chosenAddress() {
   return privateAddress ? text : (server.addresses[0] || '');
 }
 
+function clearQrImages() {
+  qrGeneration++;
+  document.querySelectorAll('[data-connection-qr]').forEach(image => image.removeAttribute('src'));
+}
+
+async function showQr(url) {
+  const generation = ++qrGeneration;
+  try {
+    const imageUrl = await api.createQr(url);
+    if (generation !== qrGeneration) return;
+    document.querySelectorAll('[data-connection-qr]').forEach(image => { image.src = imageUrl; });
+  } catch (error) {
+    if (generation !== qrGeneration) return;
+    clearQrImages();
+    console.error('Could not create connection QR code', error);
+  }
+}
+
 async function refreshConnection() {
   if (!server.running) {
     $('#phoneUrl').textContent = getString('phone.waiting');
     $('#pinValue').textContent = '••••••••';
-    $('#qr').removeAttribute('src');
+    $('#connectionPin').textContent = '••••••••';
+    clearQrImages();
     $('#connectionSummary').textContent = getString('phone.waiting');
     return;
   }
   const host = chosenAddress();
   if (!host) {
     $('#phoneUrl').textContent = getString('phone.noAddress');
-    $('#qr').removeAttribute('src');
+    $('#connectionPin').textContent = '••••••••';
+    clearQrImages();
     return;
   }
   const url = `http://${host}:${server.port}/`;
   $('#phoneUrl').textContent = url;
   $('#pinValue').textContent = server.pin || '••••••••';
+  $('#connectionPin').textContent = server.pin || '••••••••';
   $('#connectionSummary').textContent = `${url} · ${getString('phone.pin')}: ${server.pin || '••••••••'}`;
-  try { $('#qr').src = await api.createQr(url); } catch { $('#qr').removeAttribute('src'); }
+  await showQr(url);
 }
 
 function renderClients(clients = server.clients || []) {
