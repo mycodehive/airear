@@ -7,6 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const express = require('express');
 const { WebSocketServer, WebSocket } = require('ws');
+const { readLanguagePack } = require('./i18n.cjs');
 
 const LAN_CIDRS = [
   ['10.0.0.0', 8], ['172.16.0.0', 12], ['192.168.0.0', 16],
@@ -59,9 +60,10 @@ function isAllowedLanAddress(value) {
 }
 
 class AirEarServer {
-  constructor({ phoneRoot, languageRoot, onChange = () => {}, maxPeers = 4 } = {}) {
+  constructor({ phoneRoot, languageRoot, bundledLanguageRoot = null, onChange = () => {}, maxPeers = 4 } = {}) {
     this.phoneRoot = phoneRoot;
     this.languageRoot = languageRoot;
+    this.bundledLanguageRoot = bundledLanguageRoot;
     this.onChange = onChange;
     this.maxPeers = maxPeers;
     this.httpServer = null;
@@ -95,7 +97,8 @@ class AirEarServer {
       const language = req.params.language;
       if (!['ko', 'en', 'ja'].includes(language)) return res.sendStatus(404);
       const file = path.join(this.languageRoot, `${language}.json`);
-      if (!fs.existsSync(file)) return res.sendStatus(404);
+      if (!fs.existsSync(file) && !this.bundledLanguageRoot) return res.sendStatus(404);
+      if (this.bundledLanguageRoot) return res.json(readLanguagePack(language, { userRoot: this.languageRoot, bundledRoot: this.bundledLanguageRoot }));
       res.type('application/json').sendFile(file);
     });
     app.use(express.static(this.phoneRoot, { index: 'index.html', extensions: ['html'] }));

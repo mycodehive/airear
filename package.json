@@ -8,7 +8,7 @@
   "scripts": {
     "start": "electron .",
     "test": "node --test",
-    "lint": "node --check electron/main.cjs && node --check electron/preload.cjs && node --check electron/server.cjs && node --check electron/desktop/desktop.js && node --check electron/phone/phone.js",
+    "lint": "node --check electron/main.cjs && node --check electron/preload.cjs && node --check electron/i18n.cjs && node --check electron/i18n.test.cjs && node --check electron/server.cjs && node --check electron/server.test.cjs && node --check electron/desktop/desktop.js && node --check electron/phone/phone.js",
     "dist:win": "electron-builder --win nsis --x64 --publish never"
   },
   "dependencies": {

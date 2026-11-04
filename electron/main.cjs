@@ -7,6 +7,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const QRCode = require('qrcode');
 const { AirEarServer } = require('./server.cjs');
+const { readLanguagePack, repairLanguageFiles } = require('./i18n.cjs');
 
 const APP_NAME = 'AirEar';
 const VERSION = app.getVersion();
@@ -20,10 +21,7 @@ const languageDefaults = app.isPackaged ? path.join(process.resourcesPath, 'lang
 
 fs.mkdirSync(languageRoot, { recursive: true });
 fs.mkdirSync(logsRoot, { recursive: true });
-for (const lang of ['ko', 'en', 'ja']) {
-  const target = path.join(languageRoot, `${lang}.json`);
-  if (!fs.existsSync(target)) fs.copyFileSync(path.join(languageDefaults, `${lang}.json`), target);
-}
+repairLanguageFiles({ userRoot: languageRoot, bundledRoot: languageDefaults });
 
 function log(level, message) {
   const line = `${new Date().toISOString()} [${level}] ${message}\n`;
@@ -119,7 +117,7 @@ function createWindow() {
 async function startServer() {
   if (!service) {
     service = new AirEarServer({
-      phoneRoot: path.join(__dirname, 'phone'), languageRoot,
+      phoneRoot: path.join(__dirname, 'phone'), languageRoot, bundledLanguageRoot: languageDefaults,
       onChange: state => { serverState = state; send('server-state', state); },
     });
   }
@@ -178,8 +176,7 @@ ipcMain.handle('server:desktop-session', () => {
 });
 ipcMain.handle('qr:create', (_event, text) => QRCode.toDataURL(String(text), { width: 240, margin: 2, errorCorrectionLevel: 'M' }));
 ipcMain.handle('language:read', (_event, language) => {
-  if (!['ko', 'en', 'ja'].includes(language)) throw new Error('Unsupported language');
-  return JSON.parse(fs.readFileSync(path.join(languageRoot, `${language}.json`), 'utf8'));
+  return readLanguagePack(language, { userRoot: languageRoot, bundledRoot: languageDefaults });
 });
 ipcMain.handle('app:copy', (_event, text) => { clipboard.writeText(String(text)); return true; });
 ipcMain.handle('app:open-log', () => shell.openPath(logFile));
