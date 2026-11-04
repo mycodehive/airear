@@ -14,14 +14,15 @@ Enter the current 8-digit PIN shown in the desktop app. Stop and restart the LAN
 ## No audio reaches the phone
 
 - Start broadcasting from the desktop app after starting the LAN server.
-- Select the expected Windows playback device as the Windows default output before starting capture.
+- Select the expected endpoint in AirEar and confirm it supports loopback. Start broadcasting automatically prefers VB-CABLE when available.
+- If using VB-CABLE, route Windows playback to `CABLE Input` in Windows Sound settings. AirEar's selector changes the capture endpoint only; it does not change the Windows playback route.
 - Check the desktop audio level meter and make sure stream mute is off.
 - In the phone browser, tap Connect and listen, then tap the native audio player's Play button if requested.
 - Some apps use protected audio that Windows loopback may not capture.
 
 ## Keep PC speakers quiet
 
-Set the VB-CABLE virtual playback device as Windows default output. Driver setup is manual from the official VB-Audio site; Windows may require administrator approval and a reboot. A failed or skipped driver installation does not prevent testing with a normal output device.
+Route Windows playback to the VB-CABLE virtual `CABLE Input` endpoint. Driver setup is manual from the official VB-Audio site; Windows may require administrator approval and a reboot. A failed or skipped driver installation does not prevent testing with a normal output device.
 
 ## Audio pauses when the phone is locked
 

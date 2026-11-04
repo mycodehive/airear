@@ -8,6 +8,7 @@ const path = require('node:path');
 const QRCode = require('qrcode');
 const { AirEarServer } = require('./server.cjs');
 const { readLanguagePack, repairLanguageFiles } = require('./i18n.cjs');
+const { AudioCaptureService } = require('./audio.cjs');
 
 const APP_NAME = 'AirEar';
 const VERSION = app.getVersion();
@@ -51,6 +52,13 @@ let serverState = null;
 let updaterAvailable = false;
 let shutdownStarted = false;
 const instanceLock = app.requestSingleInstanceLock();
+const audioCapture = new AudioCaptureService({
+  onFrame: frame => send('audio-frame', frame),
+  onError: error => {
+    log('error', `WASAPI loopback capture failed: ${error?.name || 'Error'}`);
+    send('audio-error', { message: String(error?.message || error || 'Audio capture failed') });
+  },
+});
 
 function saveSettings(next) {
   settings = { ...settings, ...next };
@@ -175,6 +183,10 @@ ipcMain.handle('server:desktop-session', () => {
   return { port: service.port, token: service.desktopToken };
 });
 ipcMain.handle('qr:create', (_event, text) => QRCode.toDataURL(String(text), { width: 240, margin: 2, errorCorrectionLevel: 'M' }));
+ipcMain.handle('audio:list-devices', () => audioCapture.listOutputDevices());
+ipcMain.handle('audio:prepare', (_event, deviceId) => audioCapture.prepare(String(deviceId || '')));
+ipcMain.handle('audio:start', () => audioCapture.start());
+ipcMain.handle('audio:stop', async () => { await audioCapture.stop(); return true; });
 ipcMain.handle('language:read', (_event, language) => {
   return readLanguagePack(language, { userRoot: languageRoot, bundledRoot: languageDefaults });
 });
@@ -200,12 +212,14 @@ autoUpdater.on('error', error => { log('warn', `Update operation failed: ${error
 app.on('second-instance', () => showWindow());
 app.on('before-quit', event => {
   quitting = true;
-  if (!shutdownStarted && service?.httpServer) {
+  if (!shutdownStarted && (service?.httpServer || audioCapture.stream)) {
     event.preventDefault();
     shutdownStarted = true;
     const runningService = service;
     service = null;
-    runningService.stop().catch(error => log('warn', `Service shutdown failed: ${error.name || 'Error'}`)).finally(() => app.quit());
+    Promise.allSettled([runningService?.stop(), audioCapture.stop()])
+      .then(results => results.filter(result => result.status === 'rejected').forEach(result => log('warn', `Shutdown failed: ${result.reason?.name || 'Error'}`)))
+      .finally(() => app.quit());
   }
 });
 app.whenReady().then(async () => {

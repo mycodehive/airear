@@ -41,10 +41,19 @@
     "title": "Broadcast audio",
     "idle": "Not broadcasting",
     "live": "Broadcasting",
-    "description": "Electron captures the Windows system audio loopback and sends it to connected phones.",
+    "description": "Capture the selected Windows playback device with WASAPI loopback and send it to connected phones.",
     "volume": "Stream volume",
     "mute": "Mute",
-    "cable": "To keep PC speakers silent, set VB-CABLE as the Windows default output device."
+    "outputDevice": "Output device",
+    "loadingDevices": "Loading devices…",
+    "refreshDevices": "Refresh",
+    "defaultDevice": "Default",
+    "noDevices": "No loopback-capable output devices are available.",
+    "cable": "VB-Audio Cable is selected automatically when broadcasting starts. Route PC playback to this endpoint in Windows Sound settings.",
+    "cableMissing": "VB-CABLE was not found. The selected or default output device will be used.",
+    "deviceError": "Could not load output devices.",
+    "captureError": "Audio device capture error:",
+    "deviceUnavailable": "The selected output device is unavailable. Refresh the device list."
   },
   "phone": {
     "title": "Connect a phone",
