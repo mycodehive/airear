@@ -11,6 +11,7 @@ function subscribe(channel, callback) {
 contextBridge.exposeInMainWorld('airEar', Object.freeze({
   getState: () => ipcRenderer.invoke('app:get-state'),
   saveSettings: value => ipcRenderer.invoke('app:save-settings', value),
+  refreshLanAddresses: () => ipcRenderer.invoke('network:refresh-addresses'),
   startServer: () => ipcRenderer.invoke('server:start'),
   stopServer: () => ipcRenderer.invoke('server:stop'),
   getDesktopSession: () => ipcRenderer.invoke('server:desktop-session'),

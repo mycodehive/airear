@@ -107,6 +107,23 @@ async function refreshConnection() {
   await showQr(url);
 }
 
+async function refreshLanAddress() {
+  const button = $('#refreshAddress');
+  button.disabled = true;
+  $('#lanAddress').value = '';
+  server.addresses = [];
+  clearQrImages();
+  try {
+    server.addresses = await api.refreshLanAddresses();
+    $('#lanAddress').value = server.addresses[0] || '';
+    await refreshConnection();
+  } catch (error) {
+    $('#phoneUrl').textContent = `${getString('error.addressRefresh')} ${error.message || error}`;
+  } finally {
+    button.disabled = false;
+  }
+}
+
 function renderClients(clients = server.clients || []) {
   const root = $('#clients');
   $('#clientCount').textContent = String(clients.length);
@@ -203,9 +220,7 @@ async function startServer() {
     await api.saveSettings({ port, autoStart: $('#autoStart').checked });
     const state = await api.startServer();
     server = state;
-    if (!$('#lanAddress').value.trim() || !state.addresses.includes($('#lanAddress').value.trim())) {
-      $('#lanAddress').value = state.addresses[0] || '';
-    }
+    $('#lanAddress').value = state.addresses[0] || '';
     setServerStatus(true);
     await refreshConnection();
     renderClients(state.clients);
@@ -411,14 +426,11 @@ async function initialize() {
   await refreshAudioDevices();
   setTheme($('#theme').value);
   server = appState.server;
+  server.addresses = await api.refreshLanAddresses();
+  $('#lanAddress').value = server.addresses[0] || '';
   setServerStatus(server.running);
   if (server.running) {
-    $('#lanAddress').value = server.addresses[0] || '';
     await refreshConnection();
-  } else {
-    const found = await api.getState();
-    server.addresses = found.server.addresses || [];
-    $('#lanAddress').value = server.addresses[0] || '';
   }
   renderClients(server.clients || []);
   renderDiagnostics();
@@ -429,6 +441,7 @@ $('#settingsButton').addEventListener('click', () => showView('settings'));
 $('#serverButton').addEventListener('click', () => server.running ? stopServer() : startServer());
 $('#broadcastButton').addEventListener('click', startAudio);
 $('#stopBroadcastButton').addEventListener('click', () => { void stopAudio(); });
+$('#refreshAddress').addEventListener('click', refreshLanAddress);
 $('#refreshDevices').addEventListener('click', refreshAudioDevices);
 $('#outputDevice').addEventListener('change', () => { api.saveSettings({ outputDeviceId: $('#outputDevice').value }); });
 $('#gain').addEventListener('input', () => { syncGain(); api.saveSettings({ gain: Number($('#gain').value) / 100 }); });

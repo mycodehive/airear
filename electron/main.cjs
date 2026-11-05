@@ -6,7 +6,7 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const QRCode = require('qrcode');
-const { AirEarServer } = require('./server.cjs');
+const { AirEarServer, getActiveLanAddresses } = require('./server.cjs');
 const { readLanguagePack, repairLanguageFiles } = require('./i18n.cjs');
 const { AudioCaptureService } = require('./audio.cjs');
 
@@ -176,6 +176,7 @@ function configureCapture() {
 
 ipcMain.handle('app:get-state', () => ({ version: VERSION, settings, server: service?.snapshot() || { running: false }, packaged: app.isPackaged }));
 ipcMain.handle('app:save-settings', (_event, next) => saveSettings(next));
+ipcMain.handle('network:refresh-addresses', () => service ? service.refreshAddresses() : getActiveLanAddresses());
 ipcMain.handle('server:start', async () => startServer());
 ipcMain.handle('server:stop', async () => stopServer());
 ipcMain.handle('server:desktop-session', () => {

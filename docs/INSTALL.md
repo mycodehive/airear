@@ -19,6 +19,8 @@ The Electron installer is not an in-place replacement for the previous Python on
 6. Enter the 8-digit PIN shown in AirEar and tap **Connect and listen**. Mobile browsers require this explicit user action for playback.
 7. Use the phone's hardware volume buttons for receiver volume. Use the desktop slider for stream gain.
 
+After moving the PC to another Wi-Fi access point, use **Refresh IP** in AirEar. It clears the old address and selects the active Windows route before updating the phone URL and QR code.
+
 The server listens on the displayed LAN address and port, default `8765`. Allow AirEar on the Windows Private network firewall profile if prompted. Do not create an internet port-forwarding rule.
 
 ## Keep PC speakers quiet

@@ -60,6 +60,7 @@
     "receivers": "receivers",
     "description": "Open this address on a phone connected to the same Wi-Fi, enter the PIN, and tap Listen.",
     "lanAddress": "PC LAN address",
+    "refreshAddress": "Refresh IP",
     "waiting": "Start the server to display the connection URL.",
     "noAddress": "No private LAN address is available. Check your Wi-Fi connection.",
     "pin": "Access PIN",
@@ -123,7 +124,8 @@
     "serverStop": "Could not stop the server.",
     "noAudioTrack": "No system audio track was found.",
     "capture": "Could not start system audio capture.",
-    "signaling": "Could not connect to the signalling service."
+    "signaling": "Could not connect to the signalling service.",
+    "addressRefresh": "Could not detect the current network IP address."
   },
   "update": {
     "available": "Update available",

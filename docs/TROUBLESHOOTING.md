@@ -4,6 +4,7 @@
 
 - Check that the PC and phone use the same Wi-Fi and are not on guest Wi-Fi with client isolation.
 - Use the private LAN address displayed by AirEar. A VPN or multiple adapters can change which LAN is reachable.
+- If you changed Wi-Fi access points and the displayed address is stale, press **Refresh IP**. This clears the old value and looks up the current active Windows network route.
 - Allow AirEar on the Windows Private network firewall profile. Keep the port closed to public networks.
 - Confirm the LAN server is running and the selected port is not already in use.
 

@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
-const { AirEarServer, getLanAddresses, isAllowedLanAddress, isPrivateIPv4 } = require('./server.cjs');
+const { AirEarServer, getActiveLanAddresses, getLanAddresses, isAllowedLanAddress, isPrivateIPv4 } = require('./server.cjs');
 
 test('private IPv4 detection rejects public and link-local addresses', () => {
   assert.equal(isPrivateIPv4('192.168.0.45'), true);
@@ -26,6 +26,24 @@ test('LAN address list filters public adapters and prefers 192.168 addresses', (
     private: [{ address: '10.0.0.2', family: 4, internal: false }],
   });
   assert.deepEqual(addresses, ['192.168.0.45', '10.0.0.2']);
+});
+
+test('Windows LAN address lookup prefers the active default-route adapter over stale addresses', () => {
+  const runPowerShell = () => JSON.stringify([
+    { address: '192.168.1.64', routeMetric: 15, interfaceMetric: 10 },
+    { address: '192.168.0.45', routeMetric: 45, interfaceMetric: 10 },
+    { address: '164.90.1.2', routeMetric: 1, interfaceMetric: 1 },
+  ]);
+  assert.deepEqual(getActiveLanAddresses({ platform: 'win32', runPowerShell }), ['192.168.1.64', '192.168.0.45']);
+});
+
+test('Windows LAN address lookup falls back to private interface addresses if route lookup fails', () => {
+  const addresses = getActiveLanAddresses({
+    platform: 'win32',
+    runPowerShell: () => { throw new Error('PowerShell unavailable'); },
+    interfaces: { wifi: [{ address: '192.168.1.64', family: 'IPv4', internal: false }] },
+  });
+  assert.deepEqual(addresses, ['192.168.1.64']);
 });
 
 test('LAN server serves receiver files and health status', async t => {

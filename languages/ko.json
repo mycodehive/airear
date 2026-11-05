@@ -60,6 +60,7 @@
     "receivers": "대 연결",
     "description": "같은 Wi-Fi에 연결된 휴대폰에서 주소를 열고 PIN을 입력한 다음 듣기를 누르세요.",
     "lanAddress": "PC LAN 주소",
+    "refreshAddress": "IP 새로고침",
     "waiting": "서버를 시작하면 접속 주소가 표시됩니다.",
     "noAddress": "사용 가능한 사설 LAN 주소가 없습니다. Wi-Fi 연결을 확인하세요.",
     "pin": "접속 PIN",
@@ -123,7 +124,8 @@
     "serverStop": "서버를 중지하지 못했습니다.",
     "noAudioTrack": "시스템 오디오 트랙을 찾지 못했습니다.",
     "capture": "시스템 오디오 캡처를 시작하지 못했습니다.",
-    "signaling": "시그널링 서버에 연결하지 못했습니다."
+    "signaling": "시그널링 서버에 연결하지 못했습니다.",
+    "addressRefresh": "현재 네트워크 IP를 가져오지 못했습니다."
   },
   "update": {
     "available": "업데이트 있음",

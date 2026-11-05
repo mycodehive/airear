@@ -29,6 +29,8 @@ The Electron installer is a new installation format. To move from the old Python
 4. Enter the 8-digit PIN from the desktop app and tap **Connect and listen**.
 5. Adjust listening volume with the phone's volume buttons. Use AirEar's slider to change the stream gain.
 
+If you switch Wi-Fi access points, press **Refresh IP** in the phone connection card. AirEar clears the previous address, detects the active Windows network route, and updates the displayed URL and QR code.
+
 To keep audio off the PC speakers, install VB-CABLE from the [official VB-Audio website](https://vb-audio.com/Cable/) and route Windows playback to `CABLE Input` in Windows Sound settings. AirEar captures that endpoint and streams it to connected phones. AirEar does not silently download or install audio drivers. See [installation notes](docs/INSTALL.md).
 
 ## Current capture scope
