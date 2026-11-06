@@ -1,6 +1,6 @@
 {
   "name": "airear",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Stream Windows system audio to phones over a private LAN",
   "main": "electron/main.cjs",
   "private": true,
@@ -28,7 +28,9 @@
     "appId": "com.mycodehive.airear",
     "productName": "AirEar",
     "asar": true,
-    "asarUnpack": ["electron/windows/**/*"],
+    "asarUnpack": [
+      "electron/windows/**/*"
+    ],
     "directories": {
       "output": "dist-electron"
     },

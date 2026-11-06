@@ -1,7 +1,13 @@
-# AirEar v1.0.4
+# AirEar v2.0.1
 
-- Detect the phone connection address from active local network interfaces and use only RFC1918 private IPv4 addresses.
-- Filter hostname lookup results so public addresses such as 164.x cannot become the default connection address.
-- Prefer 192.168.x.x addresses and ignore stale saved addresses when initializing the current LAN address.
+- Electron Windows desktop app with HTML/CSS/JavaScript UI, editable Korean/English/Japanese JSON language packs, tray support and NSIS installation.
+- Refresh the LAN URL and QR after network interface/AP changes; clear stale addresses.
+- Select a WASAPI output endpoint and request the corresponding Windows default playback device. Prefer VB-CABLE when starting broadcast.
+- Restore receiver retry controls when audio broadcasting has not started.
 
-The Windows GitHub Actions build runs the automated tests and frozen EXE smoke check. Physical network adapter behavior should still be confirmed on a Windows PC. The EXE is unsigned and may trigger a Windows SmartScreen warning.
+## Install
+Download AirEar-Setup-2.0.1-x64.exe and run it. Python v1.x users must close the old app and install this Electron version once; the old Python updater cannot migrate the runtime. Later Electron updates use the app updater.
+
+The installer is unsigned and Windows SmartScreen may warn. SHA256SUMS.txt is included.
+
+Automated validation includes JavaScript checks, 23 Node tests, Windows COM helper compilation, NSIS build and installed-app startup smoke testing. Physical AP switching, actual Windows endpoint switching, phone playback and long-duration streaming remain hardware validation items. Some applications retain explicit per-app output routing. Windows default output switching uses PolicyConfig COM and can fail on unsupported or restricted systems.
