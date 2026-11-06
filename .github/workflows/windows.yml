@@ -26,6 +26,9 @@ jobs:
         run: npm run lint
       - name: Run Node.js tests
         run: npm test
+      - name: Compile Windows audio policy interop
+        shell: powershell
+        run: ./electron/windows/set-output.ps1 -ValidateOnly
       - name: Build NSIS installer
         run: npm run dist:win
         env:

@@ -260,7 +260,7 @@ class AirEarServer {
   }
 
   snapshot() {
-    return { running: !!this.httpServer, port: this.port, pin: this.pin, addresses: this.addresses.length ? [...this.addresses] : getLanAddresses(), clients: this._peerList(), desktopConnected: !!this.desktop };
+    return { running: !!this.httpServer, port: this.port, pin: this.pin, addresses: [...this.addresses], clients: this._peerList(), desktopConnected: !!this.desktop };
   }
 
   async stop() {
