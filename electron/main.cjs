@@ -132,6 +132,7 @@ async function startServer() {
     });
   }
   serverState = await service.start(settings.port);
+  void service.refreshAddresses().catch(error => log('warn', `Address refresh failed: ${error.name}`));
   log('info', `LAN signaling service started on port ${serverState.port}`);
   return { ...serverState, desktopToken: service.desktopToken };
 }
@@ -190,7 +191,7 @@ ipcMain.handle('audio:list-devices', () => audioCapture.listOutputDevices());
 ipcMain.handle('audio:set-output', async (_event, id) => {
   const device = audioCapture.listOutputDevices().find(item => item.id === id);
   if (!device) throw new Error('The selected output device is no longer available.');
-  await setWindowsOutput(device.id);
+  if (!device.isDefault) await setWindowsOutput(device.id);
   return true;
 });
 ipcMain.handle('audio:prepare', (_event, deviceId) => audioCapture.prepare(String(deviceId || '')));
@@ -242,7 +243,7 @@ app.whenReady().then(async () => {
       const signature = JSON.stringify(os.networkInterfaces());
       if (signature !== networkSignature) {
         networkSignature = signature;
-        if (service) service.refreshAddresses();
+        if (service) void service.refreshAddresses().catch(error => log('warn', `Address refresh failed: ${error.name}`));
       }
     } catch (error) { log('warn', `Network refresh failed: ${error.name || 'Error'}`); }
   }, 3000);

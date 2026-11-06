@@ -12,7 +12,8 @@
   "title": "PC 사운드를 휴대폰에서 들으세요",
   "status": {
     "stopped": "서버 중지",
-    "running": "서버 실행 중"
+    "running": "서버 실행 중",
+    "initializing": "세팅중입니다. 잠시만 기다려주세요."
   },
   "hero": {
     "badge": "이어폰은 휴대폰에 한 번만 연결",
@@ -125,7 +126,8 @@
     "noAudioTrack": "시스템 오디오 트랙을 찾지 못했습니다.",
     "capture": "시스템 오디오 캡처를 시작하지 못했습니다.",
     "signaling": "시그널링 서버에 연결하지 못했습니다.",
-    "addressRefresh": "현재 네트워크 IP를 가져오지 못했습니다."
+    "addressRefresh": "현재 네트워크 IP를 가져오지 못했습니다.",
+    "initialization": "초기 설정에 실패했습니다. 프로그램을 다시 실행해 주세요."
   },
   "update": {
     "available": "업데이트 있음",

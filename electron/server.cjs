@@ -1,7 +1,9 @@
 'use strict';
 
 const crypto = require('node:crypto');
-const { execFileSync } = require('node:child_process');
+const { execFile } = require('node:child_process');
+const { promisify } = require('node:util');
+const runAsync = promisify(execFile);
 const fs = require('node:fs');
 const http = require('node:http');
 const os = require('node:os');
@@ -50,7 +52,7 @@ function getLanAddresses(interfaces) {
   });
 }
 
-function getActiveLanAddresses({ platform = process.platform, interfaces, runPowerShell = execFileSync } = {}) {
+async function getActiveLanAddresses({ platform = process.platform, interfaces, runPowerShell = runAsync } = {}) {
   if (platform === 'win32') {
     const command = [
       "$items = foreach ($config in (Get-NetIPConfiguration -ErrorAction SilentlyContinue | Where-Object { $_.NetAdapter.Status -eq 'Up' -and $_.IPv4DefaultGateway -and $_.IPv4Address })) {",
@@ -62,9 +64,10 @@ function getActiveLanAddresses({ platform = process.platform, interfaces, runPow
       "}; $items | Sort-Object routeMetric, interfaceMetric | ConvertTo-Json -Compress",
     ].join(' ');
     try {
-      const output = runPowerShell('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', command], {
+      const result = await runPowerShell('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', command], {
         encoding: 'utf8', windowsHide: true, timeout: 5000, stdio: ['ignore', 'pipe', 'ignore'],
-      }).trim();
+      });
+      const output = (typeof result === 'string' ? result : result.stdout).trim();
       if (output) {
         const parsed = JSON.parse(output);
         const active = (Array.isArray(parsed) ? parsed : [parsed])
@@ -110,7 +113,7 @@ class AirEarServer {
     if (this.httpServer) return this.snapshot();
     this.pin = String(crypto.randomInt(0, 100000000)).padStart(8, '0');
     this.desktopToken = crypto.randomBytes(32).toString('hex');
-    this.addresses = getActiveLanAddresses();
+    this.addresses = getLanAddresses();
     const app = express();
     app.disable('x-powered-by');
     app.use((req, res, next) => {
@@ -253,8 +256,8 @@ class AirEarServer {
     return [...this.peers].map(([id, item]) => ({ id, address: item.address, connectedAt: item.connectedAt }));
   }
 
-  refreshAddresses() {
-    this.addresses = getActiveLanAddresses();
+  async refreshAddresses() {
+    this.addresses = await getActiveLanAddresses();
     this.onChange(this.snapshot());
     return [...this.addresses];
   }
