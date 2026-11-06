@@ -12,7 +12,8 @@
   "title": "Listen to your PC on your phone",
   "status": {
     "stopped": "Server stopped",
-    "running": "Server running"
+    "running": "Server running",
+    "initializing": "Setting up. Please wait."
   },
   "hero": {
     "badge": "One pair of earphones",
@@ -125,7 +126,8 @@
     "noAudioTrack": "No system audio track was found.",
     "capture": "Could not start system audio capture.",
     "signaling": "Could not connect to the signalling service.",
-    "addressRefresh": "Could not detect the current network IP address."
+    "addressRefresh": "Could not detect the current network IP address.",
+    "initialization": "Initialization failed. Please restart AirEar."
   },
   "update": {
     "available": "Update available",

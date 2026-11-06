@@ -17,6 +17,7 @@ const peers = new Map();
 let updateState = { state: 'idle' };
 let languageCheck = null;
 let qrGeneration = 0;
+let broadcastStarting = false;
 
 function getString(key) {
   return key.split('.').reduce((value, part) => value && value[part], strings) || key;
@@ -92,6 +93,7 @@ async function refreshConnection() {
     $('#connectionSummary').textContent = getString('phone.waiting');
     return;
   }
+  if (!outputStream) { clearQrImages(); }
   const host = chosenAddress();
   if (!host) {
     $('#phoneUrl').textContent = getString('phone.noAddress');
@@ -104,7 +106,7 @@ async function refreshConnection() {
   $('#pinValue').textContent = server.pin || '••••••••';
   $('#connectionPin').textContent = server.pin || '••••••••';
   $('#connectionSummary').textContent = `${url} · ${getString('phone.pin')}: ${server.pin || '••••••••'}`;
-  await showQr(url);
+  if (outputStream) await showQr(url);
 }
 
 async function refreshLanAddress() {
@@ -241,8 +243,11 @@ async function stopServer() {
 }
 
 async function startAudio() {
+  if (broadcastStarting || outputStream) return;
+  broadcastStarting = true;
+  $('#broadcastButton').disabled = true;
   if (!server.running) await startServer();
-  if (!server.running) return;
+  if (!server.running) { broadcastStarting = false; $('#broadcastButton').disabled = false; return; }
   try {
     const device = await selectBroadcastDevice();
     const capture = await api.prepareAudioCapture(device.id);
@@ -273,10 +278,11 @@ async function startAudio() {
     openDesktopSocket();
     startMeter();
     setAudioStatus(true);
+    await refreshConnection();
   } catch (error) {
     await stopAudio();
     alert(`${getString('error.capture')}\n${error.message || error}`);
-  }
+  } finally { broadcastStarting = false; }
 }
 
 let gainNode = null;
@@ -380,6 +386,7 @@ async function stopAudio() {
   audioContext = null;
   $('#meterFill').style.width = '0';
   setAudioStatus(false);
+  clearQrImages();
 }
 
 function renderDiagnostics() {
@@ -424,7 +431,7 @@ async function initialize() {
   $('#updates').checked = appState.settings.checkUpdates !== false;
   $('#language').value = appState.settings.language || 'ko';
   await applyLanguage($('#language').value);
-  await refreshAudioDevices();
+  const devicesReady = refreshAudioDevices();
   setTheme($('#theme').value);
   server = appState.server;
   server.addresses = await api.refreshLanAddresses();
@@ -433,6 +440,7 @@ async function initialize() {
   if (server.running) {
     await refreshConnection();
   }
+  await devicesReady;
   renderClients(server.clients || []);
   renderDiagnostics();
 }
@@ -485,7 +493,8 @@ api.onAudioError(({ message }) => {
 });
 api.onUpdateState(setUpdateButton);
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if ($('#theme').value === 'system') setTheme('system'); });
-initialize().then(() => {
+initialize().catch(error => { alert(`${getString('error.initialization')}\n${error.message || error}`); }).finally(() => {
+  $('#startupNotice').hidden = true;
   languageCheck = setInterval(() => applyLanguage($('#language').value), 2500);
   void languageCheck;
 });

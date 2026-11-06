@@ -21,12 +21,17 @@ function toFloat32(samples, format) {
 }
 
 class AudioCaptureService {
-  constructor({ cpal = require('node-cpal'), onFrame = () => {}, onError = () => {} } = {}) {
-    this.cpal = cpal;
+  constructor({ cpal = null, onFrame = () => {}, onError = () => {} } = {}) {
+    this._cpal = cpal;
     this.onFrame = onFrame;
     this.onError = onError;
     this.stream = null;
     this.active = false;
+  }
+
+  get cpal() {
+    if (!this._cpal) this._cpal = require('node-cpal');
+    return this._cpal;
   }
 
   listOutputDevices() {
@@ -35,15 +40,10 @@ class AudioCaptureService {
     return devices
       .filter(device => device.supportsOutput && device.supportsLoopback)
       .map(device => {
-        let config = null;
-        try { config = api.getDefaultOutputConfig(device.deviceId); } catch { /* device may have disconnected */ }
         return {
           id: device.deviceId,
           name: device.name,
           isDefault: !!device.isDefaultOutput,
-          sampleRate: config?.sampleRate || 48000,
-          channels: config?.channels || 2,
-          sampleFormat: config?.sampleFormat || 'f32',
         };
       });
   }
@@ -52,8 +52,6 @@ class AudioCaptureService {
     await this.stop();
     const device = this.cpal.convenience.getDeviceById(deviceId);
     if (!device?.supportsOutput || !device.supportsLoopback) throw new Error('The selected output device does not support WASAPI loopback capture.');
-    const current = this.listOutputDevices().find(item => item.id === deviceId);
-    if (!current) throw new Error('The selected output device is no longer available. Refresh the device list and try again.');
     const config = this.cpal.convenience.getDefaultOutputConfig(deviceId);
     const captureConfig = {
       sampleRate: config.sampleRate,

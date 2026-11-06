@@ -28,17 +28,17 @@ test('LAN address list filters public adapters and prefers 192.168 addresses', (
   assert.deepEqual(addresses, ['192.168.0.45', '10.0.0.2']);
 });
 
-test('Windows LAN address lookup prefers the active default-route adapter over stale addresses', () => {
+test('Windows LAN address lookup prefers the active default-route adapter over stale addresses', async () => {
   const runPowerShell = () => JSON.stringify([
     { address: '192.168.1.64', routeMetric: 15, interfaceMetric: 10 },
     { address: '192.168.0.45', routeMetric: 45, interfaceMetric: 10 },
     { address: '164.90.1.2', routeMetric: 1, interfaceMetric: 1 },
   ]);
-  assert.deepEqual(getActiveLanAddresses({ platform: 'win32', runPowerShell }), ['192.168.1.64', '192.168.0.45']);
+  assert.deepEqual(await getActiveLanAddresses({ platform: 'win32', runPowerShell }), ['192.168.1.64', '192.168.0.45']);
 });
 
-test('Windows LAN address lookup falls back to private interface addresses if route lookup fails', () => {
-  const addresses = getActiveLanAddresses({
+test('Windows LAN address lookup falls back to private interface addresses if route lookup fails', async () => {
+  const addresses = await getActiveLanAddresses({
     platform: 'win32',
     runPowerShell: () => { throw new Error('PowerShell unavailable'); },
     interfaces: { wifi: [{ address: '192.168.1.64', family: 'IPv4', internal: false }] },
@@ -64,4 +64,16 @@ test('LAN server serves receiver files and health status', async t => {
   const language = await fetch(`http://127.0.0.1:${state.port}/languages/en.json`);
   assert.deepEqual(await language.json(), { test: 'ok' });
   assert.equal(server.snapshot().running, true);
+});
+
+test('slow Windows route discovery yields while the event loop remains available', async () => {
+  let completed = false;
+  const pending = getActiveLanAddresses({ platform: 'win32', runPowerShell: async () => {
+    await new Promise(resolve => setTimeout(resolve, 30));
+    completed = true;
+    return { stdout: '{"address":"192.168.1.64"}' };
+  } });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(completed, false);
+  assert.deepEqual(await pending, ['192.168.1.64']);
 });

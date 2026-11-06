@@ -12,7 +12,8 @@
   "title": "PCの音をスマートフォンで聴く",
   "status": {
     "stopped": "サーバー停止中",
-    "running": "サーバー稼働中"
+    "running": "サーバー稼働中",
+    "initializing": "設定中です。しばらくお待ちください。"
   },
   "hero": {
     "badge": "イヤホンはスマートフォンに接続",
@@ -125,7 +126,8 @@
     "noAudioTrack": "システム音声トラックが見つかりません。",
     "capture": "システム音声キャプチャを開始できませんでした。",
     "signaling": "シグナリングサービスに接続できません。",
-    "addressRefresh": "現在のネットワークIPアドレスを取得できませんでした。"
+    "addressRefresh": "現在のネットワークIPアドレスを取得できませんでした。",
+    "initialization": "初期設定に失敗しました。AirEarを再起動してください。"
   },
   "update": {
     "available": "更新があります",
