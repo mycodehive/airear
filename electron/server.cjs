@@ -1,12 +1,14 @@
 'use strict';
 
 const crypto = require('node:crypto');
+const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const http = require('node:http');
 const os = require('node:os');
 const path = require('node:path');
 const express = require('express');
 const { WebSocketServer, WebSocket } = require('ws');
+const { readLanguagePack } = require('./i18n.cjs');
 
 const LAN_CIDRS = [
   ['10.0.0.0', 8], ['172.16.0.0', 12], ['192.168.0.0', 16],
@@ -48,6 +50,34 @@ function getLanAddresses(interfaces) {
   });
 }
 
+function getActiveLanAddresses({ platform = process.platform, interfaces, runPowerShell = execFileSync } = {}) {
+  if (platform === 'win32') {
+    const command = [
+      "$items = foreach ($config in (Get-NetIPConfiguration -ErrorAction SilentlyContinue | Where-Object { $_.NetAdapter.Status -eq 'Up' -and $_.IPv4DefaultGateway -and $_.IPv4Address })) {",
+      "  $route = Get-NetRoute -AddressFamily IPv4 -DestinationPrefix '0.0.0.0/0' -InterfaceIndex $config.InterfaceIndex -ErrorAction SilentlyContinue | Sort-Object RouteMetric | Select-Object -First 1;",
+      "  $ipInterface = Get-NetIPInterface -AddressFamily IPv4 -InterfaceIndex $config.InterfaceIndex -ErrorAction SilentlyContinue | Select-Object -First 1;",
+      "  $routeMetric = if ($route) { [int]$route.RouteMetric } else { 9999 };",
+      "  $interfaceMetric = if ($ipInterface) { [int]$ipInterface.InterfaceMetric } else { 9999 };",
+      "  foreach ($ip in $config.IPv4Address) { [pscustomobject]@{ address = $ip.IPAddress; routeMetric = $routeMetric; interfaceMetric = $interfaceMetric } }",
+      "}; $items | Sort-Object routeMetric, interfaceMetric | ConvertTo-Json -Compress",
+    ].join(' ');
+    try {
+      const output = runPowerShell('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', command], {
+        encoding: 'utf8', windowsHide: true, timeout: 5000, stdio: ['ignore', 'pipe', 'ignore'],
+      }).trim();
+      if (output) {
+        const parsed = JSON.parse(output);
+        const active = (Array.isArray(parsed) ? parsed : [parsed])
+          .map(item => typeof item === 'string' ? item : item.address)
+          .filter(address => typeof address === 'string' && isPrivateIPv4(address));
+        const unique = [...new Set(active)];
+        if (unique.length) return unique;
+      }
+    } catch { /* PowerShell may be unavailable or restricted; fall back to interface addresses. */ }
+  }
+  return getLanAddresses(interfaces);
+}
+
 function normalizedRemoteAddress(value = '') {
   const address = value.startsWith('::ffff:') ? value.slice(7) : value;
   return address;
@@ -59,9 +89,10 @@ function isAllowedLanAddress(value) {
 }
 
 class AirEarServer {
-  constructor({ phoneRoot, languageRoot, onChange = () => {}, maxPeers = 4 } = {}) {
+  constructor({ phoneRoot, languageRoot, bundledLanguageRoot = null, onChange = () => {}, maxPeers = 4 } = {}) {
     this.phoneRoot = phoneRoot;
     this.languageRoot = languageRoot;
+    this.bundledLanguageRoot = bundledLanguageRoot;
     this.onChange = onChange;
     this.maxPeers = maxPeers;
     this.httpServer = null;
@@ -72,12 +103,14 @@ class AirEarServer {
     this.desktop = null;
     this.peers = new Map();
     this.attempts = new Map();
+    this.addresses = [];
   }
 
   async start(port = 8765) {
     if (this.httpServer) return this.snapshot();
     this.pin = String(crypto.randomInt(0, 100000000)).padStart(8, '0');
     this.desktopToken = crypto.randomBytes(32).toString('hex');
+    this.addresses = getActiveLanAddresses();
     const app = express();
     app.disable('x-powered-by');
     app.use((req, res, next) => {
@@ -95,7 +128,8 @@ class AirEarServer {
       const language = req.params.language;
       if (!['ko', 'en', 'ja'].includes(language)) return res.sendStatus(404);
       const file = path.join(this.languageRoot, `${language}.json`);
-      if (!fs.existsSync(file)) return res.sendStatus(404);
+      if (!fs.existsSync(file) && !this.bundledLanguageRoot) return res.sendStatus(404);
+      if (this.bundledLanguageRoot) return res.json(readLanguagePack(language, { userRoot: this.languageRoot, bundledRoot: this.bundledLanguageRoot }));
       res.type('application/json').sendFile(file);
     });
     app.use(express.static(this.phoneRoot, { index: 'index.html', extensions: ['html'] }));
@@ -219,8 +253,14 @@ class AirEarServer {
     return [...this.peers].map(([id, item]) => ({ id, address: item.address, connectedAt: item.connectedAt }));
   }
 
+  refreshAddresses() {
+    this.addresses = getActiveLanAddresses();
+    this.onChange(this.snapshot());
+    return [...this.addresses];
+  }
+
   snapshot() {
-    return { running: !!this.httpServer, port: this.port, pin: this.pin, addresses: getLanAddresses(), clients: this._peerList(), desktopConnected: !!this.desktop };
+    return { running: !!this.httpServer, port: this.port, pin: this.pin, addresses: this.addresses.length ? [...this.addresses] : getLanAddresses(), clients: this._peerList(), desktopConnected: !!this.desktop };
   }
 
   async stop() {
@@ -239,4 +279,4 @@ class AirEarServer {
   }
 }
 
-module.exports = { AirEarServer, getLanAddresses, isPrivateIPv4, isAllowedLanAddress };
+module.exports = { AirEarServer, getActiveLanAddresses, getLanAddresses, isPrivateIPv4, isAllowedLanAddress };

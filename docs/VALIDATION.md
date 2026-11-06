@@ -8,7 +8,8 @@ GitHub Actions is configured to run `npm run lint`, `npm test`, build the NSIS x
 
 The GitHub runner does not represent the user's physical audio endpoints or phone. Before calling the Electron migration production-ready, record these observations on a Windows 10/11 PC and real phone:
 
-- System audio is captured from the intended Windows default output, including VB-CABLE.
+- The selected WASAPI render endpoint is captured, including VB-CABLE when present.
+- Starting broadcast auto-selects `CABLE Input (VB-Audio Virtual Cable)` when that endpoint is available.
 - PC speakers remain quiet when Windows output is routed to VB-CABLE.
 - Audio continues through silence, device changes, disconnect/reconnect, and a 30-minute stream.
 - Multiple phone browsers connect and clean up correctly.
@@ -16,4 +17,4 @@ The GitHub runner does not represent the user's physical audio endpoints or phon
 - LAN address selection uses the reachable active private adapter, not VPN or public addresses.
 - Firewall behavior and 100%, 125%, 150%, and 200% DPI are checked.
 
-Current implementation is a JavaScript/Electron loopback baseline. Arbitrary endpoint selection and automatic WASAPI endpoint recovery are not implemented in this baseline. Do not mark them verified.
+Device selection and automatic VB-CABLE preference are implemented. Actual WASAPI audio capture, reconnect behavior, and long-running stability still require a Windows PC with physical or virtual audio endpoints; the GitHub runner's installer smoke test does not validate them.

@@ -4,16 +4,19 @@
   "description": "Stream Windows system audio to phones over a private LAN",
   "main": "electron/main.cjs",
   "private": true,
-  "engines": { "node": ">=24.22.0" },
+  "engines": {
+    "node": ">=24.22.0"
+  },
   "scripts": {
     "start": "electron .",
     "test": "node --test",
-    "lint": "node --check electron/main.cjs && node --check electron/preload.cjs && node --check electron/server.cjs && node --check electron/desktop/desktop.js && node --check electron/phone/phone.js",
+    "lint": "node --check electron/main.cjs && node --check electron/preload.cjs && node --check electron/audio.cjs && node --check electron/audio.test.cjs && node --check electron/i18n.cjs && node --check electron/i18n.test.cjs && node --check electron/server.cjs && node --check electron/server.test.cjs && node --check electron/qr.test.cjs && node --check electron/desktop/desktop.js && node --check electron/desktop/audio-processor.js && node --check electron/phone/phone.js && node --check electron/phone/phone.test.cjs",
     "dist:win": "electron-builder --win nsis --x64 --publish never"
   },
   "dependencies": {
     "electron-updater": "6.8.11",
     "express": "5.3.0",
+    "node-cpal": "1.0.0",
     "qrcode": "1.5.4",
     "ws": "8.22.1"
   },
@@ -25,14 +28,34 @@
     "appId": "com.mycodehive.airear",
     "productName": "AirEar",
     "asar": true,
-    "directories": { "output": "dist-electron" },
-    "files": ["electron/**/*", "languages/**/*", "src/airear/assets/airear.png", "package.json"],
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "electron/**/*",
+      "languages/**/*",
+      "src/airear/assets/airear.png",
+      "package.json"
+    ],
     "extraResources": [
-      { "from": "languages", "to": "languages" },
-      { "from": "src/airear/assets/airear.ico", "to": "airear.ico" }
+      {
+        "from": "languages",
+        "to": "languages"
+      },
+      {
+        "from": "src/airear/assets/airear.ico",
+        "to": "airear.ico"
+      }
     ],
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "src/airear/assets/airear.ico",
       "artifactName": "AirEar-Setup-${version}-x64.${ext}",
       "verifyUpdateCodeSignature": false
@@ -46,6 +69,13 @@
       "deleteAppDataOnUninstall": false,
       "runAfterFinish": false
     },
-    "publish": [{ "provider": "github", "owner": "mycodehive", "repo": "airear", "releaseType": "release" }]
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "mycodehive",
+        "repo": "airear",
+        "releaseType": "release"
+      }
+    ]
   }
 }

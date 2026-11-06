@@ -12,17 +12,20 @@ The Electron installer is not an in-place replacement for the previous Python on
 ## Connect a phone
 
 1. Put the Windows PC and phone on the same trusted Wi-Fi network.
-2. Select the desired Windows playback output in Windows Sound settings. AirEar currently captures the active system audio mix.
-3. In AirEar, start the LAN server and choose **Start broadcasting**. Allow display/audio capture if Windows prompts.
-4. Scan the QR code or type the LAN URL in the phone browser.
-5. Enter the 8-digit PIN shown in AirEar and tap **Connect and listen**. iOS and Android require this explicit user action for playback.
-6. Use the phone's hardware volume buttons for receiver volume. Use the desktop slider for stream gain.
+2. In AirEar, choose an output device. **Start broadcasting** automatically selects `CABLE Input (VB-Audio Virtual Cable)` when available; otherwise it uses the selected or default device.
+3. To capture audio routed through VB-CABLE, set Windows playback to `CABLE Input` in Windows Sound settings. The AirEar selector chooses the capture endpoint and does not change Windows playback routing.
+4. Start the LAN server and choose **Start broadcasting**.
+5. Scan the QR code or type the LAN URL in the phone browser.
+6. Enter the 8-digit PIN shown in AirEar and tap **Connect and listen**. Mobile browsers require this explicit user action for playback.
+7. Use the phone's hardware volume buttons for receiver volume. Use the desktop slider for stream gain.
+
+After moving the PC to another Wi-Fi access point, use **Refresh IP** in AirEar. It clears the old address and selects the active Windows route before updating the phone URL and QR code.
 
 The server listens on the displayed LAN address and port, default `8765`. Allow AirEar on the Windows Private network firewall profile if prompted. Do not create an internet port-forwarding rule.
 
 ## Keep PC speakers quiet
 
-Windows system loopback captures the system audio mix; it does not mute the physical speakers by itself. To keep the PC quiet, install VB-CABLE manually from the [official VB-Audio page](https://vb-audio.com/Cable/) and set the virtual `CABLE Input` playback device as the Windows default output. AirEar then captures the mix routed to that default output. Driver installation may need administrator approval or a reboot. AirEar never downloads or launches a driver installer automatically.
+WASAPI loopback captures the selected render endpoint; it does not mute physical speakers by itself. To keep the PC quiet, install VB-CABLE manually from the [official VB-Audio page](https://vb-audio.com/Cable/) and route Windows playback to the virtual `CABLE Input` device. Driver installation may need administrator approval or a reboot. AirEar never downloads or launches a driver installer automatically.
 
 ## Phone background playback
 

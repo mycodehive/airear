@@ -7,14 +7,16 @@ let appState = null;
 let strings = {};
 let server = { running: false, clients: [], addresses: [] };
 let signalSocket = null;
-let rawStream = null;
 let outputStream = null;
 let audioContext = null;
+let audioWorkletNode = null;
 let analyser = null;
 let meterFrame = 0;
+let outputDevices = [];
 const peers = new Map();
 let updateState = { state: 'idle' };
 let languageCheck = null;
+let qrGeneration = 0;
 
 function getString(key) {
   return key.split('.').reduce((value, part) => value && value[part], strings) || key;
@@ -63,25 +65,63 @@ function chosenAddress() {
   return privateAddress ? text : (server.addresses[0] || '');
 }
 
+function clearQrImages() {
+  qrGeneration++;
+  document.querySelectorAll('[data-connection-qr]').forEach(image => image.removeAttribute('src'));
+}
+
+async function showQr(url) {
+  const generation = ++qrGeneration;
+  try {
+    const imageUrl = await api.createQr(url);
+    if (generation !== qrGeneration) return;
+    document.querySelectorAll('[data-connection-qr]').forEach(image => { image.src = imageUrl; });
+  } catch (error) {
+    if (generation !== qrGeneration) return;
+    clearQrImages();
+    console.error('Could not create connection QR code', error);
+  }
+}
+
 async function refreshConnection() {
   if (!server.running) {
     $('#phoneUrl').textContent = getString('phone.waiting');
     $('#pinValue').textContent = '••••••••';
-    $('#qr').removeAttribute('src');
+    $('#connectionPin').textContent = '••••••••';
+    clearQrImages();
     $('#connectionSummary').textContent = getString('phone.waiting');
     return;
   }
   const host = chosenAddress();
   if (!host) {
     $('#phoneUrl').textContent = getString('phone.noAddress');
-    $('#qr').removeAttribute('src');
+    $('#connectionPin').textContent = '••••••••';
+    clearQrImages();
     return;
   }
   const url = `http://${host}:${server.port}/`;
   $('#phoneUrl').textContent = url;
   $('#pinValue').textContent = server.pin || '••••••••';
+  $('#connectionPin').textContent = server.pin || '••••••••';
   $('#connectionSummary').textContent = `${url} · ${getString('phone.pin')}: ${server.pin || '••••••••'}`;
-  try { $('#qr').src = await api.createQr(url); } catch { $('#qr').removeAttribute('src'); }
+  await showQr(url);
+}
+
+async function refreshLanAddress() {
+  const button = $('#refreshAddress');
+  button.disabled = true;
+  $('#lanAddress').value = '';
+  server.addresses = [];
+  clearQrImages();
+  try {
+    server.addresses = await api.refreshLanAddresses();
+    $('#lanAddress').value = server.addresses[0] || '';
+    await refreshConnection();
+  } catch (error) {
+    $('#phoneUrl').textContent = `${getString('error.addressRefresh')} ${error.message || error}`;
+  } finally {
+    button.disabled = false;
+  }
 }
 
 function renderClients(clients = server.clients || []) {
@@ -118,6 +158,58 @@ function setAudioStatus(active, message) {
   $('#broadcastButton').querySelector('span').textContent = getString(active ? 'audio.live' : 'button.startBroadcast');
 }
 
+function cableDevice() {
+  return outputDevices.find(device => /cable\s*input/i.test(device.name) && /vb\s*-?\s*audio/i.test(device.name))
+    || outputDevices.find(device => /cable\s*input/i.test(device.name));
+}
+
+async function refreshAudioDevices() {
+  const previous = $('#outputDevice').value || appState?.settings.outputDeviceId;
+  $('#refreshDevices').disabled = true;
+  try {
+    outputDevices = await api.listAudioDevices();
+    const select = $('#outputDevice');
+    select.replaceChildren();
+    for (const device of outputDevices) {
+      const option = document.createElement('option');
+      option.value = device.id;
+      option.textContent = `${device.name}${device.isDefault ? ` · ${getString('audio.defaultDevice')}` : ''}`;
+      select.append(option);
+    }
+    if (!outputDevices.length) {
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = getString('audio.noDevices');
+      select.append(option);
+      $('#audioDeviceHelp').textContent = getString('audio.noDevices');
+      return;
+    }
+    const cable = cableDevice();
+    const saved = outputDevices.find(device => device.id === previous);
+    const preferred = cable || saved || outputDevices.find(device => device.isDefault) || outputDevices[0];
+    select.value = preferred.id;
+    $('#audioDeviceHelp').textContent = cable ? getString('audio.cable') : getString('audio.cableMissing');
+    await api.saveSettings({ outputDeviceId: preferred.id });
+  } catch (error) {
+    console.error('Could not enumerate WASAPI output devices', error);
+    outputDevices = [];
+    $('#audioDeviceHelp').textContent = `${getString('audio.deviceError')} ${error.message || error}`;
+  } finally {
+    $('#refreshDevices').disabled = false;
+  }
+}
+
+async function selectBroadcastDevice() {
+  if (!outputDevices.length) await refreshAudioDevices();
+  const selected = cableDevice() || outputDevices.find(device => device.id === $('#outputDevice').value)
+    || outputDevices.find(device => device.isDefault) || outputDevices[0];
+  if (!selected) throw new Error(getString('audio.noDevices'));
+  $('#outputDevice').value = selected.id;
+  await api.saveSettings({ outputDeviceId: selected.id });
+  if (!cableDevice()) $('#audioDeviceHelp').textContent = getString('audio.cableMissing');
+  return selected;
+}
+
 function sendSignal(value) {
   if (signalSocket?.readyState === WebSocket.OPEN) signalSocket.send(JSON.stringify(value));
 }
@@ -128,9 +220,7 @@ async function startServer() {
     await api.saveSettings({ port, autoStart: $('#autoStart').checked });
     const state = await api.startServer();
     server = state;
-    if (!$('#lanAddress').value.trim() || !state.addresses.includes($('#lanAddress').value.trim())) {
-      $('#lanAddress').value = state.addresses[0] || '';
-    }
+    $('#lanAddress').value = state.addresses[0] || '';
     setServerStatus(true);
     await refreshConnection();
     renderClients(state.clients);
@@ -140,7 +230,7 @@ async function startServer() {
 }
 
 async function stopServer() {
-  stopAudio();
+  await stopAudio();
   try {
     server = await api.stopServer();
     setServerStatus(false);
@@ -153,11 +243,15 @@ async function startAudio() {
   if (!server.running) await startServer();
   if (!server.running) return;
   try {
-    rawStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-    for (const track of rawStream.getVideoTracks()) track.stop();
-    if (!rawStream.getAudioTracks().length) throw new Error(getString('error.noAudioTrack'));
-    audioContext = new AudioContext({ latencyHint: 'interactive' });
-    const source = audioContext.createMediaStreamSource(rawStream);
+    const device = await selectBroadcastDevice();
+    const capture = await api.prepareAudioCapture(device.id);
+    audioContext = new AudioContext({ latencyHint: 'interactive', sampleRate: capture.sampleRate });
+    await audioContext.audioWorklet.addModule(new URL('audio-processor.js', window.location.href));
+    audioWorkletNode = new AudioWorkletNode(audioContext, 'airear-loopback', {
+      numberOfInputs: 0,
+      numberOfOutputs: 1,
+      outputChannelCount: [Math.min(2, Math.max(1, capture.channels))],
+    });
     const gain = audioContext.createGain();
     const limiter = audioContext.createDynamicsCompressor();
     limiter.threshold.value = -2;
@@ -167,19 +261,19 @@ async function startAudio() {
     limiter.release.value = 0.12;
     analyser = audioContext.createAnalyser();
     analyser.fftSize = 256;
-    source.connect(gain).connect(limiter).connect(analyser);
+    audioWorkletNode.connect(gain).connect(limiter).connect(analyser);
     const destination = audioContext.createMediaStreamDestination();
     analyser.connect(destination);
     outputStream = destination.stream;
     gainNode = gain;
     syncGain();
-    rawStream.getAudioTracks()[0].addEventListener('ended', stopAudio, { once: true });
     await audioContext.resume();
+    await api.startAudioCapture();
     openDesktopSocket();
     startMeter();
     setAudioStatus(true);
   } catch (error) {
-    stopAudio();
+    await stopAudio();
     alert(`${getString('error.capture')}\n${error.message || error}`);
   }
 }
@@ -268,14 +362,16 @@ function syncGain() {
   $('#gainText').textContent = `${$('#gain').value}%`;
 }
 
-function stopAudio() {
+async function stopAudio() {
   cancelAnimationFrame(meterFrame);
   for (const id of [...peers.keys()]) closePeer(id);
   const socket = signalSocket;
   signalSocket = null;
   if (socket && socket.readyState < WebSocket.CLOSING) socket.close(1000, 'broadcast-stopped');
-  for (const track of rawStream?.getTracks() || []) track.stop();
-  rawStream = null;
+  try { audioWorkletNode?.disconnect(); } catch { /* already disconnected */ }
+  audioWorkletNode?.port.close();
+  audioWorkletNode = null;
+  await api.stopAudioCapture().catch(() => {});
   outputStream = null;
   analyser = null;
   gainNode = null;
@@ -327,16 +423,14 @@ async function initialize() {
   $('#updates').checked = appState.settings.checkUpdates !== false;
   $('#language').value = appState.settings.language || 'ko';
   await applyLanguage($('#language').value);
+  await refreshAudioDevices();
   setTheme($('#theme').value);
   server = appState.server;
+  server.addresses = await api.refreshLanAddresses();
+  $('#lanAddress').value = server.addresses[0] || '';
   setServerStatus(server.running);
   if (server.running) {
-    $('#lanAddress').value = server.addresses[0] || '';
     await refreshConnection();
-  } else {
-    const found = await api.getState();
-    server.addresses = found.server.addresses || [];
-    $('#lanAddress').value = server.addresses[0] || '';
   }
   renderClients(server.clients || []);
   renderDiagnostics();
@@ -346,7 +440,10 @@ document.querySelectorAll('.nav-item').forEach(button => button.addEventListener
 $('#settingsButton').addEventListener('click', () => showView('settings'));
 $('#serverButton').addEventListener('click', () => server.running ? stopServer() : startServer());
 $('#broadcastButton').addEventListener('click', startAudio);
-$('#stopBroadcastButton').addEventListener('click', stopAudio);
+$('#stopBroadcastButton').addEventListener('click', () => { void stopAudio(); });
+$('#refreshAddress').addEventListener('click', refreshLanAddress);
+$('#refreshDevices').addEventListener('click', refreshAudioDevices);
+$('#outputDevice').addEventListener('change', () => { api.saveSettings({ outputDeviceId: $('#outputDevice').value }); });
 $('#gain').addEventListener('input', () => { syncGain(); api.saveSettings({ gain: Number($('#gain').value) / 100 }); });
 $('#mute').addEventListener('change', () => { syncGain(); api.saveSettings({ muted: $('#mute').checked }); });
 $('#lanAddress').addEventListener('input', refreshConnection);
@@ -359,6 +456,16 @@ $('#openLog').addEventListener('click', () => api.openLog());
 $('#copyDiagnostics').addEventListener('click', () => { renderDiagnostics(); api.copy($('#diagnosticText').textContent); });
 $('#updateButton').addEventListener('click', updateButtonClick);
 api.onServerState(state => { server = state; setServerStatus(state.running); refreshConnection(); renderClients(state.clients); renderDiagnostics(); });
+api.onAudioFrame(frame => {
+  if (!audioWorkletNode) return;
+  const samples = Float32Array.from(frame.samples);
+  audioWorkletNode.port.postMessage({ samples: samples.buffer, channels: frame.channels, sampleRate: frame.sampleRate }, [samples.buffer]);
+});
+api.onAudioError(({ message }) => {
+  if (outputStream) {
+    void stopAudio().then(() => setAudioStatus(false, `${getString('audio.captureError')} ${message || ''}`.trim()));
+  }
+});
 api.onUpdateState(setUpdateButton);
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if ($('#theme').value === 'system') setTheme('system'); });
 initialize().then(() => {

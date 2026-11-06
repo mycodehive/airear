@@ -41,16 +41,26 @@
     "title": "音声配信",
     "idle": "配信停止中",
     "live": "配信中",
-    "description": "ElectronがWindowsのシステム音声ループバックをキャプチャしてスマートフォンへ送信します。",
+    "description": "選択したWindows再生デバイスをWASAPIループバックでキャプチャし、接続中のスマートフォンへ送信します。",
     "volume": "配信音量",
     "mute": "ミュート",
-    "cable": "PCスピーカーから音を出さない場合は、VB-CABLEをWindowsの既定の出力に設定してください。"
+    "outputDevice": "出力デバイス",
+    "loadingDevices": "デバイスを読み込み中…",
+    "refreshDevices": "更新",
+    "defaultDevice": "既定",
+    "noDevices": "ループバックに対応した出力デバイスがありません。",
+    "cable": "配信開始時にVB-Audio Cableを自動選択します。Windowsのサウンド設定でPCの再生先もこのデバイスにしてください。",
+    "cableMissing": "VB-CABLEが見つからないため、選択中または既定の出力デバイスを使用します。",
+    "deviceError": "出力デバイスを読み込めませんでした。",
+    "captureError": "オーディオデバイスのキャプチャエラー:",
+    "deviceUnavailable": "選択した出力デバイスが見つかりません。デバイス一覧を更新してください。"
   },
   "phone": {
     "title": "スマートフォン接続",
     "receivers": "台",
     "description": "同じWi-Fiに接続したスマートフォンでこのURLを開き、PINを入力して再生を押してください。",
     "lanAddress": "PCのLANアドレス",
+    "refreshAddress": "IPを更新",
     "waiting": "サーバーを開始すると接続URLが表示されます。",
     "noAddress": "プライベートLANアドレスがありません。Wi-Fi接続を確認してください。",
     "pin": "接続PIN",
@@ -114,7 +124,8 @@
     "serverStop": "サーバーを停止できませんでした。",
     "noAudioTrack": "システム音声トラックが見つかりません。",
     "capture": "システム音声キャプチャを開始できませんでした。",
-    "signaling": "シグナリングサービスに接続できません。"
+    "signaling": "シグナリングサービスに接続できません。",
+    "addressRefresh": "現在のネットワークIPアドレスを取得できませんでした。"
   },
   "update": {
     "available": "更新があります",

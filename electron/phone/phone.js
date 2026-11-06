@@ -73,8 +73,9 @@ async function receive(message) {
     else if (message.code === 'not-streaming') setStatus('phone.notStreaming', 'error');
     else if (message.code === 'receiver-removed') setStatus('phone.removed', 'error');
     else setStatus('phone.networkError', 'error');
-    if (['incorrect-pin', 'capacity', 'receiver-removed'].includes(message.code)) {
+    if (['incorrect-pin', 'capacity', 'receiver-removed', 'not-streaming'].includes(message.code)) {
       userDisconnected = true;
+      clearTimeout(reconnectTimer);
       $('#connect').disabled = false;
       $('#disconnect').disabled = true;
     }

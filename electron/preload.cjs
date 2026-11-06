@@ -11,9 +11,14 @@ function subscribe(channel, callback) {
 contextBridge.exposeInMainWorld('airEar', Object.freeze({
   getState: () => ipcRenderer.invoke('app:get-state'),
   saveSettings: value => ipcRenderer.invoke('app:save-settings', value),
+  refreshLanAddresses: () => ipcRenderer.invoke('network:refresh-addresses'),
   startServer: () => ipcRenderer.invoke('server:start'),
   stopServer: () => ipcRenderer.invoke('server:stop'),
   getDesktopSession: () => ipcRenderer.invoke('server:desktop-session'),
+  listAudioDevices: () => ipcRenderer.invoke('audio:list-devices'),
+  prepareAudioCapture: deviceId => ipcRenderer.invoke('audio:prepare', deviceId),
+  startAudioCapture: () => ipcRenderer.invoke('audio:start'),
+  stopAudioCapture: () => ipcRenderer.invoke('audio:stop'),
   createQr: value => ipcRenderer.invoke('qr:create', value),
   readLanguage: value => ipcRenderer.invoke('language:read', value),
   copy: value => ipcRenderer.invoke('app:copy', value),
@@ -23,5 +28,7 @@ contextBridge.exposeInMainWorld('airEar', Object.freeze({
   installUpdate: () => ipcRenderer.invoke('app:install-update'),
   quit: () => ipcRenderer.invoke('app:quit'),
   onServerState: callback => subscribe('server-state', callback),
+  onAudioFrame: callback => subscribe('audio-frame', callback),
+  onAudioError: callback => subscribe('audio-error', callback),
   onUpdateState: callback => subscribe('update-state', callback),
 }));
