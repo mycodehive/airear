@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('airEar', Object.freeze({
   stopServer: () => ipcRenderer.invoke('server:stop'),
   getDesktopSession: () => ipcRenderer.invoke('server:desktop-session'),
   listAudioDevices: () => ipcRenderer.invoke('audio:list-devices'),
+  setWindowsOutput: id => ipcRenderer.invoke('audio:set-output', id),
   prepareAudioCapture: deviceId => ipcRenderer.invoke('audio:prepare', deviceId),
   startAudioCapture: () => ipcRenderer.invoke('audio:start'),
   stopAudioCapture: () => ipcRenderer.invoke('audio:stop'),

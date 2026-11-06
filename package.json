@@ -28,6 +28,7 @@
     "appId": "com.mycodehive.airear",
     "productName": "AirEar",
     "asar": true,
+    "asarUnpack": ["electron/windows/**/*"],
     "directories": {
       "output": "dist-electron"
     },

@@ -205,6 +205,7 @@ async function selectBroadcastDevice() {
     || outputDevices.find(device => device.isDefault) || outputDevices[0];
   if (!selected) throw new Error(getString('audio.noDevices'));
   $('#outputDevice').value = selected.id;
+  await api.setWindowsOutput(selected.id);
   await api.saveSettings({ outputDeviceId: selected.id });
   if (!cableDevice()) $('#audioDeviceHelp').textContent = getString('audio.cableMissing');
   return selected;
@@ -443,7 +444,14 @@ $('#broadcastButton').addEventListener('click', startAudio);
 $('#stopBroadcastButton').addEventListener('click', () => { void stopAudio(); });
 $('#refreshAddress').addEventListener('click', refreshLanAddress);
 $('#refreshDevices').addEventListener('click', refreshAudioDevices);
-$('#outputDevice').addEventListener('change', () => { api.saveSettings({ outputDeviceId: $('#outputDevice').value }); });
+$('#outputDevice').addEventListener('change', async () => {
+  try {
+    const id = $('#outputDevice').value;
+    await api.setWindowsOutput(id);
+    await api.saveSettings({ outputDeviceId: id });
+    if (outputStream) await stopAudio();
+  } catch (error) { alert(`${getString('audio.deviceError')}\n${error.message || error}`); }
+});
 $('#gain').addEventListener('input', () => { syncGain(); api.saveSettings({ gain: Number($('#gain').value) / 100 }); });
 $('#mute').addEventListener('change', () => { syncGain(); api.saveSettings({ muted: $('#mute').checked }); });
 $('#lanAddress').addEventListener('input', refreshConnection);
@@ -455,7 +463,16 @@ $('#copyUrl').addEventListener('click', () => api.copy($('#phoneUrl').textConten
 $('#openLog').addEventListener('click', () => api.openLog());
 $('#copyDiagnostics').addEventListener('click', () => { renderDiagnostics(); api.copy($('#diagnosticText').textContent); });
 $('#updateButton').addEventListener('click', updateButtonClick);
-api.onServerState(state => { server = state; setServerStatus(state.running); refreshConnection(); renderClients(state.clients); renderDiagnostics(); });
+api.onServerState(state => {
+  if ((server.addresses || []).join(',') !== (state.addresses || []).join(',')) {
+    $('#lanAddress').value = '';
+    clearQrImages();
+    $('#lanAddress').value = state.addresses?.[0] || '';
+  }
+  server = state;
+  setServerStatus(state.running);
+  refreshConnection(); renderClients(state.clients); renderDiagnostics();
+});
 api.onAudioFrame(frame => {
   if (!audioWorkletNode) return;
   const samples = Float32Array.from(frame.samples);

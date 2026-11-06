@@ -5,10 +5,12 @@ const { autoUpdater } = require('electron-updater');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
+const os = require('node:os');
 const QRCode = require('qrcode');
 const { AirEarServer, getActiveLanAddresses } = require('./server.cjs');
 const { readLanguagePack, repairLanguageFiles } = require('./i18n.cjs');
 const { AudioCaptureService } = require('./audio.cjs');
+const { setWindowsOutput } = require('./windows-output.cjs');
 
 const APP_NAME = 'AirEar';
 const VERSION = app.getVersion();
@@ -185,6 +187,12 @@ ipcMain.handle('server:desktop-session', () => {
 });
 ipcMain.handle('qr:create', (_event, text) => QRCode.toDataURL(String(text), { width: 240, margin: 2, errorCorrectionLevel: 'M' }));
 ipcMain.handle('audio:list-devices', () => audioCapture.listOutputDevices());
+ipcMain.handle('audio:set-output', async (_event, id) => {
+  const device = audioCapture.listOutputDevices().find(item => item.id === id);
+  if (!device) throw new Error('The selected output device is no longer available.');
+  await setWindowsOutput(device.id);
+  return true;
+});
 ipcMain.handle('audio:prepare', (_event, deviceId) => audioCapture.prepare(String(deviceId || '')));
 ipcMain.handle('audio:start', () => audioCapture.start());
 ipcMain.handle('audio:stop', async () => { await audioCapture.stop(); return true; });
@@ -228,6 +236,17 @@ app.whenReady().then(async () => {
   if (process.argv.includes('--smoke-test')) return app.quit();
   configureCapture();
   createWindow();
+  let networkSignature = '';
+  const networkWatcher = setInterval(() => {
+    try {
+      const signature = JSON.stringify(os.networkInterfaces());
+      if (signature !== networkSignature) {
+        networkSignature = signature;
+        if (service) service.refreshAddresses();
+      }
+    } catch (error) { log('warn', `Network refresh failed: ${error.name || 'Error'}`); }
+  }, 3000);
+  networkWatcher.unref();
   if (settings.autoStart) startServer().catch(error => log('error', `Auto-start failed: ${error.name || 'Error'}`));
   if (app.isPackaged && settings.checkUpdates) {
     checkForUpdates(true);
