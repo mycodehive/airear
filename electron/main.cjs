@@ -118,7 +118,10 @@ function createWindow() {
   mainWindow.once('ready-to-show', () => mainWindow?.show());
   mainWindow.on('minimize', event => { if (process.platform === 'win32') { event.preventDefault(); mainWindow.hide(); createTray(); } });
   mainWindow.on('close', event => {
-    if (process.platform === 'linux') { quitting = true; app.quit(); return; }
+    if (process.platform === 'linux') {
+      if (!quitting) { event.preventDefault(); quitting = true; app.quit(); }
+      return;
+    }
     if (!quitting) { event.preventDefault(); mainWindow.hide(); createTray(); }
   });
   mainWindow.on('closed', () => { mainWindow = null; });
