@@ -10,12 +10,13 @@ const QRCode = require('qrcode');
 const { AirEarServer, getActiveLanAddresses } = require('./server.cjs');
 const { readLanguagePack, repairLanguageFiles } = require('./i18n.cjs');
 const { AudioCaptureService } = require('./audio.cjs');
+const { LinuxAudioCaptureService } = require('./linux-audio.cjs');
 const { setWindowsOutput } = require('./windows-output.cjs');
 
 const APP_NAME = 'AirEar';
 const VERSION = app.getVersion();
 const localData = process.env.LOCALAPPDATA || path.join(app.getPath('home'), 'AppData', 'Local');
-const dataRoot = path.join(localData, APP_NAME);
+const dataRoot = process.platform === 'win32' ? path.join(localData, APP_NAME) : app.getPath('userData');
 app.setPath('userData', dataRoot);
 const languageRoot = path.join(dataRoot, 'languages');
 const logsRoot = path.join(dataRoot, 'logs');
@@ -54,7 +55,8 @@ let serverState = null;
 let updaterAvailable = false;
 let shutdownStarted = false;
 const instanceLock = app.requestSingleInstanceLock();
-const audioCapture = new AudioCaptureService({
+const CaptureService = process.platform === 'linux' ? LinuxAudioCaptureService : AudioCaptureService;
+const audioCapture = new CaptureService({
   onFrame: frame => send('audio-frame', frame),
   onError: error => {
     log('error', `WASAPI loopback capture failed: ${error?.name || 'Error'}`);
@@ -76,6 +78,7 @@ function send(channel, data) {
 }
 
 function iconPath() {
+  if (process.platform !== 'win32') return path.join(__dirname, '..', 'src', 'airear', 'assets', 'airear.png');
   return app.isPackaged ? path.join(process.resourcesPath, 'airear.ico') : path.join(__dirname, '..', 'src', 'airear', 'assets', 'airear.ico');
 }
 
@@ -113,8 +116,12 @@ function createWindow() {
   });
   mainWindow.loadFile(path.join(__dirname, 'desktop', 'index.html'));
   mainWindow.once('ready-to-show', () => mainWindow?.show());
-  mainWindow.on('minimize', event => { event.preventDefault(); mainWindow.hide(); createTray(); });
+  mainWindow.on('minimize', event => { if (process.platform === 'win32') { event.preventDefault(); mainWindow.hide(); createTray(); } });
   mainWindow.on('close', event => {
+    if (process.platform === 'linux') {
+      if (!quitting) { event.preventDefault(); quitting = true; app.quit(); }
+      return;
+    }
     if (!quitting) { event.preventDefault(); mainWindow.hide(); createTray(); }
   });
   mainWindow.on('closed', () => { mainWindow = null; });
@@ -147,7 +154,7 @@ async function stopServer() {
 }
 
 async function checkForUpdates(silent = true) {
-  if (!app.isPackaged || !settings.checkUpdates) return { supported: false };
+  if (process.platform === 'linux' || !app.isPackaged || !settings.checkUpdates) return { supported: false };
   try {
     const result = await autoUpdater.checkForUpdates();
     const version = result?.updateInfo?.version || '';
@@ -177,7 +184,7 @@ function configureCapture() {
   });
 }
 
-ipcMain.handle('app:get-state', () => ({ version: VERSION, settings, server: service?.snapshot() || { running: false }, packaged: app.isPackaged }));
+ipcMain.handle('app:get-state', () => ({ version: VERSION, platform: process.platform, settings, server: service?.snapshot() || { running: false }, packaged: app.isPackaged }));
 ipcMain.handle('app:save-settings', (_event, next) => saveSettings(next));
 ipcMain.handle('network:refresh-addresses', () => service ? service.refreshAddresses() : getActiveLanAddresses());
 ipcMain.handle('server:start', async () => startServer());
@@ -189,9 +196,12 @@ ipcMain.handle('server:desktop-session', () => {
 ipcMain.handle('qr:create', (_event, text) => QRCode.toDataURL(String(text), { width: 240, margin: 2, errorCorrectionLevel: 'M' }));
 ipcMain.handle('audio:list-devices', () => audioCapture.listOutputDevices());
 ipcMain.handle('audio:set-output', async (_event, id) => {
-  const device = audioCapture.listOutputDevices().find(item => item.id === id);
+  const device = (await audioCapture.listOutputDevices()).find(item => item.id === id);
   if (!device) throw new Error('The selected output device is no longer available.');
-  if (!device.isDefault) await setWindowsOutput(device.id);
+  if (!device.isDefault) {
+    if (process.platform === 'linux') await audioCapture.setOutput(device.id);
+    else await setWindowsOutput(device.id);
+  }
   return true;
 });
 ipcMain.handle('audio:prepare', (_event, deviceId) => audioCapture.prepare(String(deviceId || '')));
@@ -249,7 +259,7 @@ app.whenReady().then(async () => {
   }, 3000);
   networkWatcher.unref();
   if (settings.autoStart) startServer().catch(error => log('error', `Auto-start failed: ${error.name || 'Error'}`));
-  if (app.isPackaged && settings.checkUpdates) {
+  if (process.platform === 'win32' && app.isPackaged && settings.checkUpdates) {
     checkForUpdates(true);
     setInterval(() => checkForUpdates(true), 4 * 60 * 60 * 1000).unref();
   }

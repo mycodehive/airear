@@ -54,7 +54,8 @@
     "cableMissing": "VB-CABLEが見つからないため、選択中または既定の出力デバイスを使用します。",
     "deviceError": "出力デバイスを読み込めませんでした。",
     "captureError": "オーディオデバイスのキャプチャエラー:",
-    "deviceUnavailable": "選択した出力デバイスが見つかりません。デバイス一覧を更新してください。"
+    "deviceUnavailable": "選択した出力デバイスが見つかりません。デバイス一覧を更新してください。",
+    "linuxHelp": "Linux出力のモニター音声をキャプチャします。PulseAudioまたはpipewire-pulseとpulseaudio-utilsが必要です。アプリ別の出力先はシステム設定で確認してください。"
   },
   "phone": {
     "title": "スマートフォン接続",

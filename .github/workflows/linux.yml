@@ -1,0 +1,61 @@
+name: Linux v2.0.2 packages
+on:
+  push:
+    branches: [main, 'fix/linux-v2.0.2']
+    paths: ['electron/**', 'languages/**', 'package*.json', '.github/workflows/linux.yml', 'docs/LINUX.md']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.22.2'
+          cache: npm
+      - name: Install Linux runtime and audio tools
+        run: sudo apt-get update && sudo apt-get install -y pulseaudio pulseaudio-utils libasound2t64 libgtk-3-0 libnss3 libgbm1 libxss1 libxtst6 libatspi2.0-0 libsecret-1-0 xvfb
+      - run: npm ci
+      - run: npm run lint && npm test
+      - name: Verify monitor audio with a virtual sink
+        run: |
+          pulseaudio --start --exit-idle-time=-1
+          pactl load-module module-null-sink sink_name=airear_test
+          AIREAR_LINUX_AUDIO_TEST=1 node --test electron/linux-audio.test.cjs
+      - name: Build AppImage and Debian package
+        run: npm run dist:linux
+      - name: Inspect packages and launch packaged application
+        run: |
+          file dist-electron/linux-unpacked/airear | grep 'ELF 64-bit'
+          dpkg-deb --info dist-electron/AirEar-2.0.2-linux-x64.deb
+          xvfb-run -a dist-electron/linux-unpacked/airear --no-sandbox --disable-gpu --smoke-test
+          cd dist-electron
+          sha256sum AirEar-2.0.2-linux-x64.AppImage AirEar-2.0.2-linux-x64.deb > SHA256SUMS-linux.txt
+          printf 'Source commit: %s\nRunner: Ubuntu 24.04 x64\n' "$GITHUB_SHA" > LINUX-BUILD.txt
+          cp ../docs/LINUX.md LINUX.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AirEar-Linux-2.0.2-x64
+          path: |
+            dist-electron/*.AppImage
+            dist-electron/*.deb
+            dist-electron/SHA256SUMS-linux.txt
+            dist-electron/LINUX-BUILD.txt
+            dist-electron/LINUX.md
+          if-no-files-found: error
+      - name: Add Linux assets to the existing release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          test "$VERSION" = '2.0.2'
+          gh release view v2.0.2 >/dev/null
+          gh release upload v2.0.2 dist-electron/*.AppImage dist-electron/*.deb dist-electron/SHA256SUMS-linux.txt dist-electron/LINUX-BUILD.txt dist-electron/LINUX.md
+        # Existing release assets are not overwritten.
