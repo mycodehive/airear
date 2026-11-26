@@ -10,8 +10,9 @@
   "scripts": {
     "start": "electron .",
     "test": "node --test",
-    "lint": "node --check electron/main.cjs && node --check electron/preload.cjs && node --check electron/audio.cjs && node --check electron/audio.test.cjs && node --check electron/i18n.cjs && node --check electron/i18n.test.cjs && node --check electron/server.cjs && node --check electron/server.test.cjs && node --check electron/qr.test.cjs && node --check electron/desktop/desktop.js && node --check electron/desktop/audio-processor.js && node --check electron/phone/phone.js && node --check electron/phone/phone.test.cjs",
-    "dist:win": "electron-builder --win nsis --x64 --publish never"
+    "lint": "node --check electron/main.cjs && node --check electron/preload.cjs && node --check electron/audio.cjs && node --check electron/audio.test.cjs && node --check electron/i18n.cjs && node --check electron/i18n.test.cjs && node --check electron/server.cjs && node --check electron/server.test.cjs && node --check electron/qr.test.cjs && node --check electron/desktop/desktop.js && node --check electron/desktop/audio-processor.js && node --check electron/phone/phone.js && node --check electron/phone/phone.test.cjs && node --check electron/linux-audio.cjs",
+    "dist:win": "electron-builder --win nsis --x64 --publish never",
+    "dist:linux": "electron-builder --linux AppImage deb --x64 --publish never"
   },
   "dependencies": {
     "electron-updater": "6.8.11",
@@ -79,6 +80,30 @@
         "repo": "airear",
         "releaseType": "release"
       }
-    ]
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "AudioVideo",
+      "icon": "src/airear/assets/airear.png",
+      "artifactName": "AirEar-${version}-linux-x64.${ext}",
+      "maintainer": "CodeHive <sahuni@gmail.com>",
+      "synopsis": "Stream desktop audio to your phone"
+    },
+    "deb": {
+      "depends": [
+        "libgtk-3-0",
+        "libnss3",
+        "libasound2t64 | libasound2",
+        "libgbm1",
+        "libxss1",
+        "libxtst6",
+        "libatspi2.0-0",
+        "libsecret-1-0",
+        "pulseaudio-utils"
+      ]
+    }
   }
 }

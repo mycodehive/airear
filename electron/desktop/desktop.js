@@ -26,6 +26,10 @@ function getString(key) {
 async function applyLanguage(language) {
   try {
     strings = await api.readLanguage(language);
+    if (appState?.platform === 'linux') {
+      strings.audio.description = strings.audio.linuxHelp;
+      strings.hero.captureNote = strings.audio.linuxHelp;
+    }
     document.documentElement.lang = language;
     document.querySelectorAll('[data-i18n]').forEach(element => {
       element.textContent = getString(element.dataset.i18n);
@@ -190,7 +194,7 @@ async function refreshAudioDevices() {
     const saved = outputDevices.find(device => device.id === previous);
     const preferred = cable || saved || outputDevices.find(device => device.isDefault) || outputDevices[0];
     select.value = preferred.id;
-    $('#audioDeviceHelp').textContent = cable ? getString('audio.cable') : getString('audio.cableMissing');
+    $('#audioDeviceHelp').textContent = appState?.platform === 'linux' ? getString('audio.linuxHelp') : (cable ? getString('audio.cable') : getString('audio.cableMissing'));
     await api.saveSettings({ outputDeviceId: preferred.id });
   } catch (error) {
     console.error('Could not enumerate WASAPI output devices', error);
@@ -209,7 +213,7 @@ async function selectBroadcastDevice() {
   $('#outputDevice').value = selected.id;
   await api.setWindowsOutput(selected.id);
   await api.saveSettings({ outputDeviceId: selected.id });
-  if (!cableDevice()) $('#audioDeviceHelp').textContent = getString('audio.cableMissing');
+  if (!cableDevice() && appState?.platform !== 'linux') $('#audioDeviceHelp').textContent = getString('audio.cableMissing');
   return selected;
 }
 

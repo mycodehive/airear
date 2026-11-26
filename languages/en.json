@@ -54,7 +54,8 @@
     "cableMissing": "VB-CABLE was not found. The selected or default output device will be used.",
     "deviceError": "Could not load output devices.",
     "captureError": "Audio device capture error:",
-    "deviceUnavailable": "The selected output device is unavailable. Refresh the device list."
+    "deviceUnavailable": "The selected output device is unavailable. Refresh the device list.",
+    "linuxHelp": "Captures the selected Linux output monitor. Requires PulseAudio or pipewire-pulse and pulseaudio-utils. Check system sound settings for existing application routing."
   },
   "phone": {
     "title": "Connect a phone",
